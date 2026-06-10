@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β0.5</title>
+  <title>STREET SURVIVAL β0.6</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="app-header">
   <div>
-    <h1>STREET SURVIVAL β0.5</h1>
-    <p>街がゲームマップになる。</p>
+    <h1>STREET SURVIVAL β0.6</h1>
+    <p>6時間イベント仕様。捕まったら、今度は追う側へ。</p>
   </div>
   <button id="resetBtn" class="ghost">リセット</button>
 </header>
@@ -36,7 +36,7 @@
 
     <div class="stats">
       <div><span id="points">0</span><small>POINT</small></div>
-      <div><span id="roleTimer">60</span><small>交代まで</small></div>
+      <div><span id="hunterTimer">-</span><small>HUNTER残り</small></div>
       <div><span id="zoneState">FIELD</span><small>ZONE</small></div>
     </div>
 
@@ -47,6 +47,7 @@
     <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで開いて位置情報を許可してください。</p>
     <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
     <p id="battleStatus" class="notice">現在：通常エリア</p>
+    <p id="ruleStatus" class="hint">ルール：ランナーは捕まるまで継続。ハンターは最大10分。HP0で即交代。</p>
   </section>
 
   <section class="card map-card">
@@ -62,7 +63,7 @@
       <div class="zone-label zone-honmachi">🟡 本町<br><small>ALERT</small></div>
       <div class="zone-label zone-shinmachi">🔴 新町<br><small>DANGER</small></div>
 
-      <div id="playerIcon" class="map-icon player">🟢</div>
+      <div id="playerIcon" class="map-icon player">🔵</div>
       <div class="map-icon spot coffee">☕<span>HP</span></div>
       <div class="map-icon spot ramen">🍜<span>HP</span></div>
       <div class="map-icon spot onn">🎵<span>LIVE</span></div>

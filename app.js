@@ -4,29 +4,35 @@ const DEFAULT_CENTER = { lat: 35.5008, lng: 137.5032 };
 const CONFIG = {
   initialHp: 100,
   maxHp: 300,
-  minHp: 10,
+  minHp: 0,
   drainPerSec: 1,
   chargePerTick: 2,
   chargeTickSec: 5,
-  roleDurationSec: 60,
+  hunterMaxSec: 600,
+  invincibleSec: 5,
   battleRangeM: 7,
   hunterSenseM: 15
 };
 
 const state = {
   mapMode: "real",
-  me: { id: "me", name: "RED", hp: 100, points: 0, role: "runner", lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng, roleEndsAt: Date.now() + 60000, zone: "FIELD" },
+  me: {
+    id: "me", name: "RED", hp: 100, points: 0, role: "runner",
+    lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng,
+    hunterEndsAt: null, invincibleUntil: 0, zone: "FIELD"
+  },
   npcs: [
-    { id: "dai", name: "DAI", hp: 100, role: "hunter", lat: 35.50095, lng: 137.50325 },
-    { id: "shinya", name: "SHINYA", hp: 100, role: "runner", lat: 35.50055, lng: 137.50285 },
-    { id: "taro", name: "TARO", hp: 100, role: "runner", lat: 35.5011, lng: 137.50365 }
+    { id: "dai", name: "DAI", hp: 100, role: "hunter", lat: 35.50095, lng: 137.50325, hunterEndsAt: Date.now() + 600000 },
+    { id: "shinya", name: "SHINYA", hp: 100, role: "runner", lat: 35.50055, lng: 137.50285, hunterEndsAt: null },
+    { id: "taro", name: "TARO", hp: 100, role: "runner", lat: 35.5011, lng: 137.50365, hunterEndsAt: null }
   ],
   zones: [
     { id: "onn", icon: "🎵", name: "お宿 Onn", effect: "LIVE SAFE / HP CHARGE", lat: 35.5008, lng: 137.5032, radius: 35 },
     { id: "coffee", icon: "☕", name: "喫茶店", effect: "+2HP / 5秒", lat: 35.50125, lng: 137.5020, radius: 25 },
     { id: "food", icon: "🍜", name: "飲食店", effect: "+2HP / 5秒", lat: 35.49975, lng: 137.5040, radius: 25 }
   ],
-  log: [], map: null, meMarker: null, accuracyCircle: null, zoneLayers: [], npcMarkers: [], watchId: null, lastChargeAt: 0, lastDrainAt: 0, lastVibeAt: 0
+  log: [], map: null, meMarker: null, accuracyCircle: null, zoneLayers: [], npcMarkers: [], watchId: null,
+  lastChargeAt: 0, lastDrainAt: 0, lastVibeAt: 0
 };
 
 const $ = id => document.getElementById(id);
@@ -142,15 +148,35 @@ function checkZone() {
 
 function setRole(role) {
   state.me.role = role;
-  state.me.roleEndsAt = Date.now() + CONFIG.roleDurationSec * 1000;
+  state.me.hunterEndsAt = role === "hunter" ? Date.now() + CONFIG.hunterMaxSec * 1000 : null;
+  state.me.invincibleUntil = Date.now() + CONFIG.invincibleSec * 1000;
   addLog(role === "hunter" ? "🟢 あなたはHUNTERになりました" : "🔵 あなたはRUNNERになりました");
   render();
 }
 
-function roleSwap() {
-  state.me.role = state.me.role === "hunter" ? "runner" : "hunter";
-  state.me.roleEndsAt = Date.now() + CONFIG.roleDurationSec * 1000;
-  addLog("⏰ 1分経過。役割が交代しました");
+function swapRolesWith(target) {
+  const oldRole = state.me.role;
+  state.me.role = target.role;
+  target.role = oldRole;
+
+  state.me.hp = CONFIG.initialHp;
+  target.hp = CONFIG.initialHp;
+
+  state.me.hunterEndsAt = state.me.role === "hunter" ? Date.now() + CONFIG.hunterMaxSec * 1000 : null;
+  target.hunterEndsAt = target.role === "hunter" ? Date.now() + CONFIG.hunterMaxSec * 1000 : null;
+  state.me.invincibleUntil = Date.now() + CONFIG.invincibleSec * 1000;
+
+  addLog("🔄 HP0。役割交代！");
+  vibrate([200, 80, 200]);
+}
+
+function hunterTimeout() {
+  if (state.me.role === "hunter" && state.me.hunterEndsAt && Date.now() >= state.me.hunterEndsAt) {
+    state.me.role = "runner";
+    state.me.hunterEndsAt = null;
+    state.me.invincibleUntil = Date.now() + CONFIG.invincibleSec * 1000;
+    addLog("⏰ ハンター10分終了。ランナーに戻りました");
+  }
 }
 
 function nearestByRole(role) {
@@ -167,6 +193,10 @@ function updateGameMap(alertLevel) {
   $("playerIcon").textContent = state.me.role === "hunter" ? "🟢" : "🔵";
 }
 
+function isInvincible() {
+  return Date.now() < state.me.invincibleUntil;
+}
+
 function updateAlert(nearest, distance, zone) {
   const box = $("alertStatus");
   document.body.classList.remove("danger-flash");
@@ -175,6 +205,13 @@ function updateAlert(nearest, distance, zone) {
 
   if (zone) {
     box.textContent = `🛡 ${zone.name}：SAFE / バイブ停止`;
+    box.classList.add("safe");
+    updateGameMap("safe");
+    return;
+  }
+
+  if (isInvincible()) {
+    box.textContent = `🛡 無敵中：${Math.ceil((state.me.invincibleUntil-Date.now())/1000)}秒`;
     box.classList.add("safe");
     updateGameMap("safe");
     return;
@@ -229,11 +266,15 @@ function updateAlert(nearest, distance, zone) {
 
 function gameTick() {
   const now = Date.now();
-  if (now >= state.me.roleEndsAt) roleSwap();
+  hunterTimeout();
 
   state.npcs.forEach(p => {
     p.lat += (Math.random() - .5) * 0.00006;
     p.lng += (Math.random() - .5) * 0.00006;
+    if (p.role === "hunter" && p.hunterEndsAt && now >= p.hunterEndsAt) {
+      p.role = "runner";
+      p.hunterEndsAt = null;
+    }
   });
   renderNpcMarkers();
 
@@ -257,7 +298,7 @@ function gameTick() {
   const d = nearest ? meters(state.me, nearest) : 999;
   updateAlert(nearest, d, null);
 
-  if (nearest && d <= CONFIG.battleRangeM) {
+  if (!isInvincible() && nearest && d <= CONFIG.battleRangeM) {
     if (now - state.lastDrainAt >= 1000) {
       state.lastDrainAt = now;
       if (state.me.role === "hunter") {
@@ -265,10 +306,16 @@ function gameTick() {
         state.me.hp = clamp(state.me.hp + CONFIG.drainPerSec, CONFIG.minHp, CONFIG.maxHp);
         state.me.points += 1;
         $("battleStatus").textContent = `⚔ ${nearest.name}からHP吸収中！距離 ${d.toFixed(1)}m`;
+        if (nearest.hp <= 0) {
+          swapRolesWith(nearest);
+        }
       } else {
         state.me.hp = clamp(state.me.hp - CONFIG.drainPerSec, CONFIG.minHp, CONFIG.maxHp);
         nearest.hp = clamp(nearest.hp + CONFIG.drainPerSec, CONFIG.minHp, CONFIG.maxHp);
         $("battleStatus").textContent = `⚠ ${nearest.name}にHPを吸収されています！距離 ${d.toFixed(1)}m`;
+        if (state.me.hp <= 0) {
+          swapRolesWith(nearest);
+        }
       }
     }
   } else if (nearest) {
@@ -284,12 +331,18 @@ function render() {
   $("hpText").textContent = `${Math.round(state.me.hp)} / ${CONFIG.maxHp}`;
   $("hpBar").style.width = `${(state.me.hp / CONFIG.maxHp) * 100}%`;
   $("points").textContent = Math.round(state.me.points);
-  $("roleTimer").textContent = Math.max(0, Math.ceil((state.me.roleEndsAt - Date.now()) / 1000));
+
+  if (state.me.role === "hunter" && state.me.hunterEndsAt) {
+    $("hunterTimer").textContent = Math.max(0, Math.ceil((state.me.hunterEndsAt - Date.now()) / 1000));
+  } else {
+    $("hunterTimer").textContent = "-";
+  }
+
   $("zoneState").textContent = state.me.zone === "FIELD" ? "FIELD" : "SAFE";
 
   const badge = $("roleBadge");
   badge.textContent = state.me.role === "hunter" ? "HUNTER" : "RUNNER";
-  badge.className = `badge ${state.me.role === "hunter" ? "hunter" : "runner"}`;
+  badge.className = `badge ${state.me.role === "hunter" ? "hunter" : "runner"} ${isInvincible() ? "invincible" : ""}`;
   $("roleBtn").textContent = state.me.role === "hunter" ? "🔵 ランナーにする" : "🟢 ハンターにする";
 
   renderShops();
@@ -303,8 +356,8 @@ function renderShops() {
 
 function renderPlayers() {
   const rows = [
-    `<div class="item"><strong>${state.me.role === "hunter" ? "🟢" : "🔵"} ${state.me.name}（あなた）</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}</small></div>`,
-    `<div class="item"><strong>🎮 GAME MAP</strong><small>他プレイヤーの正確な位置は非表示。気配だけ表示。</small></div>`
+    `<div class="item"><strong>${state.me.role === "hunter" ? "🟢" : "🔵"} ${state.me.name}（あなた）</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}${isInvincible() ? " / 無敵中" : ""}</small></div>`,
+    `<div class="item"><strong>β0.6ルール</strong><small>ランナーは捕まるまで継続。ハンターは最大10分。HP0で即交代。</small></div>`
   ].concat(state.npcs.map(p => `<div class="item"><strong>${p.role === "hunter" ? "🟢" : "🔵"} ${p.name}</strong><small>HP ${Math.round(p.hp)} / ${CONFIG.maxHp}</small><br><small>距離 ${Math.round(meters(state.me, p))}m</small></div>`));
   $("players").innerHTML = rows.join("");
 }
@@ -324,7 +377,8 @@ function reset() {
   state.me.hp = CONFIG.initialHp;
   state.me.points = 0;
   state.me.role = "runner";
-  state.me.roleEndsAt = Date.now() + CONFIG.roleDurationSec * 1000;
+  state.me.hunterEndsAt = null;
+  state.me.invincibleUntil = 0;
   state.me.lat = DEFAULT_CENTER.lat;
   state.me.lng = DEFAULT_CENTER.lng;
   state.log = [];
@@ -361,7 +415,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("vibeBtn").addEventListener("click", () => { vibrate([120, 80, 120]); addLog("📳 バイブテスト"); });
   $("mapModeBtn").addEventListener("click", toggleMapMode);
 
-  addLog("STREET SURVIVAL β0.5 起動");
+  addLog("STREET SURVIVAL β0.6 起動");
   render();
   setInterval(gameTick, 1000);
 });

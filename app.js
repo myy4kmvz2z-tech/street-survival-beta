@@ -203,4 +203,32 @@ if($("missionSoundBtn")) $("missionSoundBtn").addEventListener("click",()=>{show
 if($("liveSoundBtn")) $("liveSoundBtn").addEventListener("click",()=>{showEffect("live","🎵","LIVE SOUND");addLog("🎵 LIVE SOUND");});
 if($("finalSoundBtn")) $("finalSoundBtn").addEventListener("click",()=>{showEffect("final","🔥","FINAL SOUND");addLog("🔥 FINAL SOUND");});
 if($("endSoundBtn")) $("endSoundBtn").addEventListener("click",()=>{showEffect("end","🏆","END SOUND");addLog("🏆 END SOUND");});
-$("mapModeBtn").addEventListener("click",cycleViewMode);$("normalBtn").addEventListener("click",normalMode);$("alertBtn").addEventListener("click",alertMode);$("bossBtn").addEventListener("click",triggerBoss);$("missionBtn").addEventListener("click",triggerMission);$("liveBtn").addEventListener("click",triggerLive);$("safeBtn").addEventListener("click",triggerSafe);$("finalBtn").addEventListener("click",triggerFinal);$("endBtn").addEventListener("click",triggerEnd);addLog("STREET SURVIVAL β5.0 起動");render();setInterval(gameTick,1000);setInterval(render,1000);});
+$("mapModeBtn").addEventListener("click",cycleViewMode);addLog("STREET SURVIVAL β5.0 起動");render();setInterval(gameTick,1000);setInterval(render,1000);});
+
+
+// β7.0: receive admin commands from admin.html on same browser via localStorage.
+let lastAdminCommandId = null;
+function applyAdminCommand(cmd){
+  if(!cmd || cmd.id === lastAdminCommandId) return;
+  lastAdminCommandId = cmd.id;
+  if(cmd.type === "NORMAL") normalMode();
+  if(cmd.type === "ALERT") alertMode();
+  if(cmd.type === "BOSS") triggerBoss();
+  if(cmd.type === "MISSION") triggerMission();
+  if(cmd.type === "LIVE") triggerLive();
+  if(cmd.type === "SAFE") triggerSafe();
+  if(cmd.type === "FINAL") triggerFinal();
+  if(cmd.type === "END") triggerEnd();
+  if(cmd.type === "RADIO"){
+    setRadio(cmd.message || "運営速報");
+    showEffect("mission","📻","RADIO");
+  }
+}
+function pollAdminCommand(){
+  try{
+    const raw = localStorage.getItem("street_survival_admin_command");
+    if(raw) applyAdminCommand(JSON.parse(raw));
+  }catch(e){}
+}
+setInterval(pollAdminCommand, 800);
+window.addEventListener("storage", pollAdminCommand);

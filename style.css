@@ -136,3 +136,30 @@ body.fx-test-shake{animation:fxScreenShake .12s alternate 8}
   padding:10px 8px;
   font-size:12px;
 }
+
+
+/* β7.0 PLAYER / ADMIN split */
+.admin-link{display:inline-block;text-decoration:none;padding:10px 14px;border-radius:14px}
+.admin-body{background:radial-gradient(circle at top,#2a1d0d 0%,#07090c 52%)}
+.admin-hud{max-width:760px}
+.admin-hero,.admin-command-panel,.admin-status-card,.admin-radio-card,.admin-log-card{
+  background:linear-gradient(180deg,#131b24,#0c1117);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:16px;
+  box-shadow:0 16px 40px rgba(0,0,0,.28);
+}
+.admin-hero{text-align:center;border:3px solid var(--accent);box-shadow:0 0 38px rgba(247,201,72,.25)}
+.admin-icon{font-size:58px}
+.admin-hero h2{margin:6px 0;font-size:34px;letter-spacing:.05em}
+.admin-hero p{margin:0;color:var(--muted)}
+.admin-command-panel h2,.admin-status-card h2,.admin-radio-card h2,.admin-log-card h2{margin:0 0 12px}
+.admin-command-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.admin-command-grid button{min-height:76px;font-size:19px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.admin-command-grid button span{display:block;font-size:11px;opacity:.78;margin-top:3px}
+.admin-command-grid #adminBoss,.admin-command-grid #adminFinal{background:#ff6b6b}
+.admin-command-grid #adminSafe,.admin-command-grid #adminLive{background:#63e6be}
+.admin-command-grid #adminMission,.admin-command-grid #adminAlert{background:#ffd43b}
+.admin-command-grid #adminEnd{background:#c0c0c0}
+.player-counts.always{margin-top:0}
+.admin-radio-input{width:100%;max-width:none;margin:0 0 10px;font-size:16px}

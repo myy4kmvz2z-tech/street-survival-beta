@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β6.2</title>
+  <title>STREET SURVIVAL β7.0</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β6.2</h1>
-    <p>Event Sounds / イベントごとに音が変わる。</p>
+    <h1>STREET SURVIVAL β7.0</h1>
+    <p>PLAYER MODE / 参加者専用画面。</p>
   </div>
   <button id="resetBtn" class="ghost">RESET</button>
 </header>
@@ -117,7 +117,7 @@
   </section>
 
   <details id="menuPanel" class="menu-panel">
-    <summary>⚙ MENU</summary>
+    <summary>⚙ PLAYER MENU</summary>
 
     <div class="move-controls">
       <button data-move="up">↑</button>
@@ -147,21 +147,6 @@
     <p id="battleStatus" class="notice">現在：通常エリア</p>
     <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで位置情報を許可してください。</p>
   </details>
-
-  <details class="admin-panel">
-    <summary>📻 運営モード</summary>
-    <div class="admin-buttons">
-      <button id="normalBtn">🌆 NORMAL</button>
-      <button id="alertBtn">⚠ ALERT</button>
-      <button id="bossBtn">👹 BOSS</button>
-      <button id="missionBtn">🎯 MISSION</button>
-      <button id="liveBtn">🎵 LIVE</button>
-      <button id="safeBtn">🛡 SAFE</button>
-      <button id="finalBtn">🔥 FINAL</button>
-      <button id="endBtn">🏆 END</button>
-    </div>
-  </details>
-
   <details class="sub-panel">
     <summary>🌆 街ステータス / ログ</summary>
     <div class="player-counts">

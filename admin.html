@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>STREET SURVIVAL β7.0 ADMIN</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="admin-body">
+<header class="top-header">
+  <div>
+    <h1>STREET SURVIVAL β7.0</h1>
+    <p>ADMIN MODE / 運営が街を動かす。</p>
+  </div>
+  <a class="ghost admin-link" href="index.html">PLAYER</a>
+</header>
+
+<main class="hud admin-hud">
+  <section class="admin-hero">
+    <div class="admin-icon">🎛</div>
+    <h2>GAME MASTER</h2>
+    <p>運営専用画面。参加者には見せない。</p>
+  </section>
+
+  <section class="admin-command-panel">
+    <h2>📻 街イベント発令</h2>
+    <div class="admin-command-grid">
+      <button id="adminNormal">🌆 NORMAL<span>通常モード</span></button>
+      <button id="adminAlert">⚠ ALERT<span>警戒情報</span></button>
+      <button id="adminBoss">👹 BOSS<span>新町に出現</span></button>
+      <button id="adminMission">🎯 MISSION<span>本町集合</span></button>
+      <button id="adminLive">🎵 LIVE<span>オルタ開始</span></button>
+      <button id="adminSafe">🛡 SAFE<span>Onn安全地帯</span></button>
+      <button id="adminFinal">🔥 FINAL<span>終盤バトル</span></button>
+      <button id="adminEnd">🏆 END<span>ゲーム終了</span></button>
+    </div>
+  </section>
+
+  <section class="admin-status-card">
+    <h2>🌆 街ステータス</h2>
+    <div class="player-counts always">
+      <strong id="adminModeText">NORMAL</strong>
+      <div class="count-row"><span>👥 参加者</span><b id="adminTotal">18</b></div>
+      <div class="count-row"><span>🟢 HUNTER</span><b id="adminHunter">5</b></div>
+      <div class="count-row"><span>🔵 RUNNER</span><b id="adminRunner">13</b></div>
+      <div class="count-row"><span>👹 BOSS</span><b id="adminBossCount">0</b></div>
+      <div class="count-row"><span>🎯 MISSION</span><b id="adminMissionCount">0</b></div>
+      <div class="count-row"><span>🛡 SAFE</span><b id="adminSafeCount">4</b></div>
+    </div>
+  </section>
+
+  <section class="admin-radio-card">
+    <h2>📻 手動RADIO</h2>
+    <input id="adminRadioInput" class="admin-radio-input" value="本町で戦闘発生！"/>
+    <button id="adminRadioSend" class="full">📡 RADIO送信</button>
+    <p class="hint">同じ端末・同じブラウザ内ではPLAYER画面にも反映されます。本番で全員に同期するにはFirebase等のサーバー連携が必要です。</p>
+  </section>
+
+  <section class="admin-log-card">
+    <h2>運営ログ</h2>
+    <div id="adminLog" class="log"></div>
+  </section>
+</main>
+
+<script src="admin.js"></script>
+</body>
+</html>

@@ -1,38 +1,52 @@
-# STREET SURVIVAL β6.2 Event Sounds HUD
+# STREET SURVIVAL β7.0 PLAYER / ADMIN Split
 
-## 追加内容
+## コンセプト
 
-イベントごとに専用サウンドを追加しました。
+参加者はゲームを楽しむ。運営は街を演出する。
 
-- 🛡 SAFE：明るい回復音
-- 👹 BOSS：低い警告音＋ノイズ
-- 🎯 MISSION：ピピッという指令音
-- 🎵 LIVE：ファンファーレ風
-- 🔥 FINAL：サイレン風＋低音
-- 🏆 GAME END：勝利・終了音
-- 🔊 FX TEST：通常テスト音
+## PLAYER画面 `index.html`
 
-## メニュー内テスト
+- 参加者画面から運営モードを削除
+- GPS / ACTION / MENU のみ
+- 詳細・ログはMENU内
+- 参加者が誤ってBOSSやFINALを押すことを防止
 
-MENUを開くと、各イベント音を個別に試せます。
+## ADMIN画面 `admin.html`
 
-- SAFE音
-- BOSS音
-- MISSION音
-- LIVE音
-- FINAL音
-- END音
+- 運営専用画面を追加
+- ワンタップ発令
+  - 🌆 NORMAL
+  - ⚠ ALERT
+  - 👹 BOSS
+  - 🎯 MISSION
+  - 🎵 LIVE
+  - 🛡 SAFE
+  - 🔥 FINAL
+  - 🏆 END
+- 手動RADIO送信
+- 街ステータス表示
+- 運営ログ表示
 
-## 注意
+## 重要
 
-iPhoneではバイブは使えない場合があります。
-β6.2は、音・光・レーダー波紋・画面演出でイベントを伝える設計です。
+現在のβ7.0では、`admin.html` から `index.html` への連携は
+同じ端末・同じブラウザ内のデモ用です。
+
+参加者全員へリアルタイム配信する本番仕様には、
+Firebaseなどのサーバー連携が必要です。
+
+## 使い方
+
+- 参加者：`index.html`
+- 運営：`admin.html`
 
 ## 更新方法
 
-GitHubのトップに以下4ファイルを上書きしてください。
+GitHubのトップに以下6ファイルをアップロードしてください。
 
 - index.html
+- admin.html
 - style.css
 - app.js
+- admin.js
 - README.md

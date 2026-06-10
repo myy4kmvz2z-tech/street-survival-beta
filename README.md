@@ -1,26 +1,25 @@
-# STREET SURVIVAL β0.7 Event Radio版
+# STREET SURVIVAL β0.8 RPG UI版
 
-## β0.7 追加機能
+## β0.8 追加機能
 
-- 📻 運営ラジオ表示
-- ⏰ 6時間イベント残り時間
-- 🛡 状況パネル
-  - RUNNER
-  - HUNTER
-  - SAFE
-  - BATTLE
-  - BOSS
-  - MISSION
-- 👹 レイドボス出現ボタン
-- 🎯 ミッション発令ボタン
-- ❤️ HPチャージ演出
-- 🌆 STREET LEVEL 表示
-- β0.6の6時間イベント仕様を継続
-  - ランナーは捕まるまで継続
-  - ハンターは最大10分
-  - HP0で即役割交代
-  - 交代後5秒無敵
-  - SAFE / HP CHARGE ZONE
+- RUNNER / HUNTER 状況表示を大型化
+- RADIOをテロップ風にスクロール
+- STREET LEVEL詳細表示
+  - ★★★★★
+  - 18/20
+  - あと2人
+- SAFE ZONEを派手に表示
+  - 🛡 SAFE
+  - お宿 Onn
+  - ❤️ HP CHARGE
+- プレイヤー人数表示
+  - 👥 18人参加中
+  - 🟢 HUNTER 5
+  - 🔵 RUNNER 13
+  - 👹 BOSS 1
+  - 🎯 MISSION 2
+  - 🛡 SAFE 4
+- β0.7の運営ラジオ、6時間イベント仕様、ボス、ミッション、ゲーム地図を継続
 
 ## 更新方法
 

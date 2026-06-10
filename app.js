@@ -18,14 +18,12 @@ const CONFIG = {
 const state = {
   eventStartAt: Date.now(),
   participantCount: 18,
+  simulatedHunters: 5,
+  simulatedSafe: 4,
   bossActive: false,
   missionActive: false,
   mapMode: "real",
-  me: {
-    id: "me", name: "RED", hp: 100, points: 0, role: "runner",
-    lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng,
-    hunterEndsAt: null, invincibleUntil: 0, zone: "FIELD"
-  },
+  me: { id: "me", name: "RED", hp: 100, points: 0, role: "runner", lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng, hunterEndsAt: null, invincibleUntil: 0, zone: "FIELD" },
   npcs: [
     { id: "dai", name: "DAI", hp: 100, role: "hunter", lat: 35.50095, lng: 137.50325, hunterEndsAt: Date.now() + 600000 },
     { id: "shinya", name: "SHINYA", hp: 100, role: "runner", lat: 35.50055, lng: 137.50285, hunterEndsAt: null },
@@ -51,7 +49,7 @@ function addLog(text) {
 }
 
 function setRadio(text) {
-  $("radioText").textContent = text;
+  $("radioTicker").textContent = `📻 STREET SURVIVAL RADIO　｜　${text}　｜　👹 レイドボス出現！　｜　🎯 本町ミッション開始！　｜　🎵 LIVE SAFE発動！`;
   addLog("📻 " + text);
 }
 
@@ -83,10 +81,10 @@ function alertVibration(level) {
   }
 }
 
-function updateBigStatus(type, title, text) {
-  const el = $("bigStatus");
-  el.className = "big-status " + type;
-  el.innerHTML = `<strong>${title}</strong><span>${text}</span>`;
+function updateHero(type, main, sub, note) {
+  const el = $("heroStatus");
+  el.className = "hero-status " + type;
+  el.innerHTML = `<div class="hero-main">${main}</div><div class="hero-sub">${sub}</div><div class="hero-note">${note}</div>`;
 }
 
 function initMap() {
@@ -211,8 +209,16 @@ function updateGameMap(alertLevel) {
   $("missionIcon").classList.toggle("hidden", !state.missionActive);
 }
 
-function isInvincible() {
-  return Date.now() < state.me.invincibleUntil;
+function isInvincible() { return Date.now() < state.me.invincibleUntil; }
+
+function showSafeBanner(zone) {
+  const b = $("safeBanner");
+  if (zone) {
+    $("safePlace").textContent = zone.name;
+    b.classList.remove("hidden");
+  } else {
+    b.classList.add("hidden");
+  }
 }
 
 function updateAlert(nearest, distance, zone) {
@@ -224,36 +230,32 @@ function updateAlert(nearest, distance, zone) {
   if (zone) {
     box.textContent = `🛡 ${zone.name}：SAFE / バイブ停止`;
     box.classList.add("safe");
-    updateBigStatus("safe-status", "🛡 SAFE", `${zone.name}でHPチャージ中`);
+    updateHero("safe-hero", "🛡 SAFE", zone.name, "❤️ HP CHARGE");
+    showSafeBanner(zone);
     updateGameMap("safe");
     return;
   }
+  showSafeBanner(null);
 
   if (isInvincible()) {
     const s = Math.ceil((state.me.invincibleUntil-Date.now())/1000);
     box.textContent = `🛡 無敵中：${s}秒`;
     box.classList.add("safe");
-    updateBigStatus("safe-status", "🛡 INVINCIBLE", `無敵中 ${s}秒`);
+    updateHero("safe-hero", "🛡 INVINCIBLE", `無敵中 ${s}秒`, "態勢を立て直せ");
     updateGameMap("safe");
     return;
-  }
-
-  if (state.bossActive) {
-    updateBigStatus("boss-status", "👹 BOSS ACTIVE", "街にレイドボス出現中");
-  } else if (state.missionActive) {
-    updateBigStatus("mission-status", "🎯 MISSION", "本町へ向かえ！");
   }
 
   if (state.me.role === "hunter") {
     if (nearest && distance <= CONFIG.hunterSenseM) {
       box.textContent = `📳 ランナーの気配あり：${distance.toFixed(1)}m以内`;
       box.classList.add("level2");
-      updateBigStatus("hunter-status", "🟢 HUNTER", `📳 気配あり ${distance.toFixed(1)}m`);
+      updateHero("hunter-hero", "🟢 HUNTER", "🎯 TARGET", `${distance.toFixed(1)}m`);
       alertVibration("hunterSense");
       level = "hunterSense";
     } else {
       box.textContent = "🟢 ハンター：気配なし";
-      if (!state.bossActive && !state.missionActive) updateBigStatus("hunter-status", "🟢 HUNTER", "気配なし。街を読め。");
+      updateHero("hunter-hero", "🟢 HUNTER", "🎯 捜索中", "気配なし");
     }
     updateGameMap(level);
     return;
@@ -261,7 +263,7 @@ function updateAlert(nearest, distance, zone) {
 
   if (!nearest) {
     box.textContent = "🔵 ランナー：通常";
-    if (!state.bossActive && !state.missionActive) updateBigStatus("runner-status", "🔵 RUNNER", "気配なし。街を読め。");
+    updateHero("runner-hero", "🔵 RUNNER", "🏃 生存中", "👀 気配なし");
     updateGameMap(level);
     return;
   }
@@ -270,31 +272,31 @@ function updateAlert(nearest, distance, zone) {
     box.textContent = `⚔ 接触！HP吸収中：${distance.toFixed(1)}m`;
     box.classList.add("level3");
     document.body.classList.add("danger-flash");
-    updateBigStatus("battle-status", "⚔ BATTLE", `HP吸収中 ${distance.toFixed(1)}m`);
+    updateHero("battle-hero", "⚔ BATTLE", "HP吸収中！", `${distance.toFixed(1)}m`);
     alertVibration("contact");
     level = "contact";
   } else if (distance <= 10) {
     box.textContent = `🚨 危険！ハンター接近：${distance.toFixed(1)}m`;
     box.classList.add("level3");
     document.body.classList.add("danger-flash");
-    updateBigStatus("battle-status", "🚨 DANGER", `ハンター接近 ${distance.toFixed(1)}m`);
+    updateHero("battle-hero", "🚨 DANGER", "逃げろ！", `${distance.toFixed(1)}m`);
     alertVibration("runner10");
     level = "runner10";
   } else if (distance <= 20) {
     box.textContent = `⚠ ハンター接近：${Math.round(distance)}m`;
     box.classList.add("level2");
-    updateBigStatus("runner-status", "⚠ ALERT", `ハンター接近 ${Math.round(distance)}m`);
+    updateHero("runner-hero", "⚠ ALERT", "ハンター接近", `${Math.round(distance)}m`);
     alertVibration("runner20");
     level = "runner20";
   } else if (distance <= 30) {
     box.textContent = `👀 気配を感じる：${Math.round(distance)}m`;
     box.classList.add("level1");
-    updateBigStatus("runner-status", "👀 SIGN", `気配あり ${Math.round(distance)}m`);
+    updateHero("runner-hero", "🔵 RUNNER", "🏃 生存中", `👀 気配あり ${Math.round(distance)}m`);
     alertVibration("runner30");
     level = "runner30";
   } else {
     box.textContent = "🔵 ランナー：通常";
-    if (!state.bossActive && !state.missionActive) updateBigStatus("runner-status", "🔵 RUNNER", "気配なし。街を読め。");
+    updateHero("runner-hero", "🔵 RUNNER", "🏃 生存中", "👀 気配なし");
   }
   updateGameMap(level);
 }
@@ -383,15 +385,28 @@ function renderEventClock() {
 
 function renderStreetLevel() {
   const n = state.participantCount;
-  let level = 1;
-  if (n >= 100) level = 5;
-  else if (n >= 60) level = 4;
-  else if (n >= 40) level = 3;
-  else if (n >= 20) level = 2;
+  let level = 1, next = 20;
+  if (n >= 100) { level = 5; next = null; }
+  else if (n >= 60) { level = 4; next = 100; }
+  else if (n >= 40) { level = 3; next = 60; }
+  else if (n >= 20) { level = 2; next = 40; }
   const stars = "★★★★★".slice(0, level) + "☆☆☆☆☆".slice(0, 5-level);
   $("streetLevel").textContent = stars;
-  const next = level === 1 ? 20 : level === 2 ? 40 : level === 3 ? 60 : level === 4 ? 100 : null;
-  $("streetLevelText").textContent = next ? `参加者 ${n}人 / 次まで${next-n}人` : `参加者 ${n}人 / MAX`;
+  $("streetLevelCount").textContent = next ? `${n}/${next}` : `${n}/MAX`;
+  $("streetLevelText").textContent = next ? `あと${next-n}人！` : "MAX LEVEL";
+}
+
+function renderPlayerCounts() {
+  const hunter = state.simulatedHunters + (state.me.role === "hunter" ? 1 : 0);
+  const boss = state.bossActive ? 1 : 0;
+  const mission = state.missionActive ? 2 : 0;
+  const runner = Math.max(0, state.participantCount - hunter);
+  $("totalPlayers").textContent = `${state.participantCount}人参加中`;
+  $("hunterCount").textContent = hunter;
+  $("runnerCount").textContent = runner;
+  $("bossCount").textContent = boss;
+  $("missionCount").textContent = mission;
+  $("safeCount").textContent = state.simulatedSafe + (state.me.zone !== "FIELD" ? 1 : 0);
 }
 
 function render() {
@@ -416,6 +431,7 @@ function render() {
 
   renderEventClock();
   renderStreetLevel();
+  renderPlayerCounts();
   renderShops();
   renderPlayers();
   updateGameMap("none");
@@ -429,7 +445,7 @@ function renderShops() {
 function renderPlayers() {
   const rows = [
     `<div class="item"><strong>${state.me.role === "hunter" ? "🟢" : "🔵"} ${state.me.name}（あなた）</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}${isInvincible() ? " / 無敵中" : ""}</small></div>`,
-    `<div class="item"><strong>β0.7</strong><small>運営ラジオ・残り時間・状況表示・ボス・ミッション演出を追加。</small></div>`
+    `<div class="item"><strong>β0.8</strong><small>大型ステータス・ラジオテロップ・人数表示・派手SAFEを追加。</small></div>`
   ].concat(state.npcs.map(p => `<div class="item"><strong>${p.role === "hunter" ? "🟢" : "🔵"} ${p.name}</strong><small>HP ${Math.round(p.hp)} / ${CONFIG.maxHp}</small><br><small>距離 ${Math.round(meters(state.me, p))}m</small></div>`));
   $("players").innerHTML = rows.join("");
 }
@@ -458,7 +474,7 @@ function reset() {
   state.missionActive = false;
   state.log = [];
   state.lastVibeAt = 0;
-  $("radioText").textContent = "本町・新町・お宿 Onn周辺、ゲーム開始準備中。";
+  setRadio("本町・新町・お宿 Onn周辺、ゲーム開始準備中。");
   updateMePosition(state.me.lat, state.me.lng, 10, true);
   addLog("ゲームをリセットしました");
 }
@@ -475,7 +491,7 @@ function triggerBoss() {
   state.bossActive = !state.bossActive;
   if (state.bossActive) {
     setRadio("緊急速報！新町エリアにレイドボス出現！");
-    updateBigStatus("boss-status", "👹 BOSS ACTIVE", "新町にレイドボス出現！");
+    updateHero("boss-hero", "👹 BOSS ACTIVE", "新町に出現！", "全員警戒");
     vibrate([200,80,200,80,300]);
   } else {
     setRadio("レイドボスイベント終了。街は通常状態へ。");
@@ -487,7 +503,7 @@ function triggerMission() {
   state.missionActive = !state.missionActive;
   if (state.missionActive) {
     setRadio("街ミッション発令！5分以内に本町エリアへ向かえ！");
-    updateBigStatus("mission-status", "🎯 MISSION", "本町へ向かえ！報酬あり");
+    updateHero("mission-hero", "🎯 MISSION", "本町へ向かえ！", "報酬あり");
     vibrate([120,80,120]);
   } else {
     setRadio("街ミッション終了。次の運営速報を待て。");
@@ -497,15 +513,13 @@ function triggerMission() {
 
 function triggerLive() {
   setRadio("お宿 Onn前、LIVE SAFE発動！ライブを楽しめ！");
-  updateBigStatus("safe-status", "🎵 LIVE SAFE", "お宿 Onn前は戦闘停止");
+  updateHero("safe-hero", "🎵 LIVE SAFE", "お宿 Onn前", "戦闘停止 / HP CHARGE");
   vibrate([100,60,100,60,100]);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   initMap();
-
   document.querySelectorAll("[data-move]").forEach(btn => btn.addEventListener("click", () => move(btn.dataset.move)));
-
   window.addEventListener("keydown", e => {
     if (e.key === "ArrowUp") move("up");
     if (e.key === "ArrowDown") move("down");
@@ -522,7 +536,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("missionBtn").addEventListener("click", triggerMission);
   $("liveBtn").addEventListener("click", triggerLive);
 
-  addLog("STREET SURVIVAL β0.7 起動");
+  addLog("STREET SURVIVAL β0.8 起動");
   render();
   setInterval(gameTick, 1000);
   setInterval(render, 1000);

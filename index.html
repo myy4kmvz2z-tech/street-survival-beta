@@ -3,34 +3,47 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β0.7</title>
+  <title>STREET SURVIVAL β0.8</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="app-header">
   <div>
-    <h1>STREET SURVIVAL β0.7</h1>
-    <p>街が実況し、ミッションが動き、ボスが現れる。</p>
+    <h1>STREET SURVIVAL β0.8</h1>
+    <p>中津川の街を、一日だけRPGに。</p>
   </div>
   <button id="resetBtn" class="ghost">リセット</button>
 </header>
 
 <main class="layout">
+  <section class="card wide radio-card">
+    <div class="ticker-wrap">
+      <div id="radioTicker" class="ticker">📻 STREET SURVIVAL RADIO　｜　本町・新町・お宿 Onn周辺、ゲーム開始準備中。　｜　👹 レイドボス出現！　｜　🎯 本町ミッション開始！　｜　🎵 LIVE SAFE発動！</div>
+    </div>
 
-  <section class="card wide top-status">
-    <div class="radio-box">
-      <strong>📻 STREET SURVIVAL RADIO</strong>
-      <p id="radioText">本町・新町・お宿 Onn周辺、ゲーム開始準備中。</p>
-    </div>
-    <div class="event-clock">
-      <small>⏰ EVENT TIME</small>
-      <strong id="eventTimer">6:00:00</strong>
-    </div>
-    <div class="street-level">
-      <small>🌆 STREET LEVEL</small>
-      <strong id="streetLevel">★☆☆☆☆</strong>
-      <span id="streetLevelText">参加者 18人 / 次まで2人</span>
+    <div class="top-grid">
+      <div class="event-clock">
+        <small>⏰ EVENT TIME</small>
+        <strong id="eventTimer">6:00:00</strong>
+      </div>
+
+      <div class="street-level">
+        <small>🌆 STREET LEVEL</small>
+        <strong id="streetLevel">★☆☆☆☆</strong>
+        <div id="streetLevelCount" class="level-count">18/20</div>
+        <span id="streetLevelText">あと2人！</span>
+      </div>
+
+      <div class="player-counts">
+        <small>👥 PLAYER STATUS</small>
+        <strong id="totalPlayers">18人参加中</strong>
+        <div class="count-row"><span>🟢 HUNTER</span><b id="hunterCount">5</b></div>
+        <div class="count-row"><span>🔵 RUNNER</span><b id="runnerCount">13</b></div>
+        <div class="count-row"><span>👹 BOSS</span><b id="bossCount">0</b></div>
+        <div class="count-row"><span>🎯 MISSION</span><b id="missionCount">0</b></div>
+        <div class="count-row"><span>🛡 SAFE</span><b id="safeCount">4</b></div>
+      </div>
     </div>
   </section>
 
@@ -43,9 +56,16 @@
       <span id="roleBadge" class="badge runner">RUNNER</span>
     </div>
 
-    <div id="bigStatus" class="big-status runner-status">
-      <strong>🔵 RUNNER</strong>
-      <span>気配なし。街を読め。</span>
+    <div id="heroStatus" class="hero-status runner-hero">
+      <div class="hero-main">🔵 RUNNER</div>
+      <div class="hero-sub">🏃 生存中</div>
+      <div class="hero-note">👀 気配なし</div>
+    </div>
+
+    <div id="safeBanner" class="safe-banner hidden">
+      <strong>🛡 SAFE</strong>
+      <span id="safePlace">お宿 Onn</span>
+      <em>❤️ HP CHARGE</em>
     </div>
 
     <div class="hp-block">
@@ -76,7 +96,6 @@
     <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで開いて位置情報を許可してください。</p>
     <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
     <p id="battleStatus" class="notice">現在：通常エリア</p>
-    <p id="ruleStatus" class="hint">ルール：ランナーは捕まるまで継続。ハンターは最大10分。HP0で即交代。</p>
   </section>
 
   <section class="card map-card">

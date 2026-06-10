@@ -10,22 +10,12 @@ const CONFIG = {
   chargeTickSec: 5,
   roleDurationSec: 60,
   battleRangeM: 7,
-  hunterSenseM: 15,
-  runnerAlertM: 30
+  hunterSenseM: 15
 };
 
 const state = {
-  me: {
-    id: "me",
-    name: "RED",
-    hp: 100,
-    points: 0,
-    role: "runner",
-    lat: DEFAULT_CENTER.lat,
-    lng: DEFAULT_CENTER.lng,
-    roleEndsAt: Date.now() + 60000,
-    zone: "FIELD"
-  },
+  mapMode: "real",
+  me: { id: "me", name: "RED", hp: 100, points: 0, role: "runner", lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng, roleEndsAt: Date.now() + 60000, zone: "FIELD" },
   npcs: [
     { id: "dai", name: "DAI", hp: 100, role: "hunter", lat: 35.50095, lng: 137.50325 },
     { id: "shinya", name: "SHINYA", hp: 100, role: "runner", lat: 35.50055, lng: 137.50285 },
@@ -36,17 +26,7 @@ const state = {
     { id: "coffee", icon: "☕", name: "喫茶店", effect: "+2HP / 5秒", lat: 35.50125, lng: 137.5020, radius: 25 },
     { id: "food", icon: "🍜", name: "飲食店", effect: "+2HP / 5秒", lat: 35.49975, lng: 137.5040, radius: 25 }
   ],
-  log: [],
-  map: null,
-  meMarker: null,
-  accuracyCircle: null,
-  zoneLayers: [],
-  npcMarkers: [],
-  watchId: null,
-  lastChargeAt: 0,
-  lastDrainAt: 0,
-  lastVibeAt: 0,
-  lastAlertLevel: ""
+  log: [], map: null, meMarker: null, accuracyCircle: null, zoneLayers: [], npcMarkers: [], watchId: null, lastChargeAt: 0, lastDrainAt: 0, lastVibeAt: 0
 };
 
 const $ = id => document.getElementById(id);
@@ -61,10 +41,8 @@ function addLog(text) {
 
 function meters(a, b) {
   const R = 6371000;
-  const p1 = a.lat * Math.PI / 180;
-  const p2 = b.lat * Math.PI / 180;
-  const dp = (b.lat - a.lat) * Math.PI / 180;
-  const dl = (b.lng - a.lng) * Math.PI / 180;
+  const p1 = a.lat * Math.PI / 180, p2 = b.lat * Math.PI / 180;
+  const dp = (b.lat - a.lat) * Math.PI / 180, dl = (b.lng - a.lng) * Math.PI / 180;
   const x = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
@@ -77,26 +55,12 @@ function vibrate(pattern) {
 
 function alertVibration(level) {
   const now = Date.now();
-  let interval = 999999;
-  let pattern = 0;
-
-  if (level === "hunterSense") {
-    interval = 2000;
-    pattern = 250;
-  } else if (level === "runner30") {
-    interval = 5000;
-    pattern = 80;
-  } else if (level === "runner20") {
-    interval = 3000;
-    pattern = 120;
-  } else if (level === "runner10") {
-    interval = 1200;
-    pattern = 180;
-  } else if (level === "contact") {
-    interval = 700;
-    pattern = [120, 80, 120];
-  }
-
+  let interval = 999999, pattern = 0;
+  if (level === "hunterSense") { interval = 2000; pattern = 250; }
+  else if (level === "runner30") { interval = 5000; pattern = 80; }
+  else if (level === "runner20") { interval = 3000; pattern = 120; }
+  else if (level === "runner10") { interval = 1200; pattern = 180; }
+  else if (level === "contact") { interval = 700; pattern = [120, 80, 120]; }
   if (pattern && now - state.lastVibeAt >= interval) {
     vibrate(pattern);
     state.lastVibeAt = now;
@@ -104,7 +68,7 @@ function alertVibration(level) {
 }
 
 function initMap() {
-  state.map = L.map("map").setView([state.me.lat, state.me.lng], 17);
+  state.map = L.map("realMap").setView([state.me.lat, state.me.lng], 17);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(state.map);
   state.meMarker = L.marker([state.me.lat, state.me.lng]).addTo(state.map).bindPopup("📍 あなた");
   state.accuracyCircle = L.circle([state.me.lat, state.me.lng], { radius: CONFIG.battleRangeM, color: "#f7c948" }).addTo(state.map);
@@ -136,8 +100,7 @@ function renderNpcMarkers() {
 }
 
 function updateMePosition(lat, lng, accuracy = 10, moveMap = true) {
-  state.me.lat = lat;
-  state.me.lng = lng;
+  state.me.lat = lat; state.me.lng = lng;
   if (state.meMarker) {
     state.meMarker.setLatLng([lat, lng]);
     state.meMarker.setPopupContent(`${state.me.role === "hunter" ? "🟢 HUNTER" : "🔵 RUNNER"}<br>HP ${Math.round(state.me.hp)}`);
@@ -180,7 +143,6 @@ function checkZone() {
 function setRole(role) {
   state.me.role = role;
   state.me.roleEndsAt = Date.now() + CONFIG.roleDurationSec * 1000;
-  state.lastAlertLevel = "";
   addLog(role === "hunter" ? "🟢 あなたはHUNTERになりました" : "🔵 あなたはRUNNERになりました");
   render();
 }
@@ -188,7 +150,6 @@ function setRole(role) {
 function roleSwap() {
   state.me.role = state.me.role === "hunter" ? "runner" : "hunter";
   state.me.roleEndsAt = Date.now() + CONFIG.roleDurationSec * 1000;
-  state.lastAlertLevel = "";
   addLog("⏰ 1分経過。役割が交代しました");
 }
 
@@ -198,14 +159,24 @@ function nearestByRole(role) {
   return targets.sort((a, b) => meters(state.me, a) - meters(state.me, b))[0];
 }
 
+function updateGameMap(alertLevel) {
+  const gameMap = $("gameMap");
+  const ring = $("dangerRing");
+  gameMap.classList.toggle("alert", ["runner10", "contact", "hunterSense"].includes(alertLevel));
+  ring.classList.toggle("hidden", !["runner10", "contact", "hunterSense"].includes(alertLevel));
+  $("playerIcon").textContent = state.me.role === "hunter" ? "🟢" : "🔵";
+}
+
 function updateAlert(nearest, distance, zone) {
   const box = $("alertStatus");
   document.body.classList.remove("danger-flash");
   box.className = "alert-box";
+  let level = "none";
 
   if (zone) {
     box.textContent = `🛡 ${zone.name}：SAFE / バイブ停止`;
     box.classList.add("safe");
+    updateGameMap("safe");
     return;
   }
 
@@ -214,40 +185,46 @@ function updateAlert(nearest, distance, zone) {
       box.textContent = `📳 ランナーの気配あり：${distance.toFixed(1)}m以内`;
       box.classList.add("level2");
       alertVibration("hunterSense");
+      level = "hunterSense";
     } else {
       box.textContent = "🟢 ハンター：気配なし";
     }
+    updateGameMap(level);
     return;
   }
 
-  if (state.me.role === "runner") {
-    if (!nearest) {
-      box.textContent = "🔵 ランナー：通常";
-      return;
-    }
-
-    if (distance <= CONFIG.battleRangeM) {
-      box.textContent = `⚔ 接触！HP吸収中：${distance.toFixed(1)}m`;
-      box.classList.add("level3");
-      document.body.classList.add("danger-flash");
-      alertVibration("contact");
-    } else if (distance <= 10) {
-      box.textContent = `🚨 危険！ハンター接近：${distance.toFixed(1)}m`;
-      box.classList.add("level3");
-      document.body.classList.add("danger-flash");
-      alertVibration("runner10");
-    } else if (distance <= 20) {
-      box.textContent = `⚠ ハンター接近：${Math.round(distance)}m`;
-      box.classList.add("level2");
-      alertVibration("runner20");
-    } else if (distance <= 30) {
-      box.textContent = `👀 気配を感じる：${Math.round(distance)}m`;
-      box.classList.add("level1");
-      alertVibration("runner30");
-    } else {
-      box.textContent = "🔵 ランナー：通常";
-    }
+  if (!nearest) {
+    box.textContent = "🔵 ランナー：通常";
+    updateGameMap(level);
+    return;
   }
+
+  if (distance <= CONFIG.battleRangeM) {
+    box.textContent = `⚔ 接触！HP吸収中：${distance.toFixed(1)}m`;
+    box.classList.add("level3");
+    document.body.classList.add("danger-flash");
+    alertVibration("contact");
+    level = "contact";
+  } else if (distance <= 10) {
+    box.textContent = `🚨 危険！ハンター接近：${distance.toFixed(1)}m`;
+    box.classList.add("level3");
+    document.body.classList.add("danger-flash");
+    alertVibration("runner10");
+    level = "runner10";
+  } else if (distance <= 20) {
+    box.textContent = `⚠ ハンター接近：${Math.round(distance)}m`;
+    box.classList.add("level2");
+    alertVibration("runner20");
+    level = "runner20";
+  } else if (distance <= 30) {
+    box.textContent = `👀 気配を感じる：${Math.round(distance)}m`;
+    box.classList.add("level1");
+    alertVibration("runner30");
+    level = "runner30";
+  } else {
+    box.textContent = "🔵 ランナー：通常";
+  }
+  updateGameMap(level);
 }
 
 function gameTick() {
@@ -278,7 +255,6 @@ function gameTick() {
   const targetRole = state.me.role === "hunter" ? "runner" : "hunter";
   const nearest = nearestByRole(targetRole);
   const d = nearest ? meters(state.me, nearest) : 999;
-
   updateAlert(nearest, d, null);
 
   if (nearest && d <= CONFIG.battleRangeM) {
@@ -310,10 +286,12 @@ function render() {
   $("points").textContent = Math.round(state.me.points);
   $("roleTimer").textContent = Math.max(0, Math.ceil((state.me.roleEndsAt - Date.now()) / 1000));
   $("zoneState").textContent = state.me.zone === "FIELD" ? "FIELD" : "SAFE";
+
   const badge = $("roleBadge");
   badge.textContent = state.me.role === "hunter" ? "HUNTER" : "RUNNER";
   badge.className = `badge ${state.me.role === "hunter" ? "hunter" : "runner"}`;
   $("roleBtn").textContent = state.me.role === "hunter" ? "🔵 ランナーにする" : "🟢 ハンターにする";
+
   renderShops();
   renderPlayers();
   $("log").innerHTML = state.log.map(line => `<div>${line}</div>`).join("");
@@ -325,7 +303,8 @@ function renderShops() {
 
 function renderPlayers() {
   const rows = [
-    `<div class="item"><strong>${state.me.role === "hunter" ? "🟢" : "🔵"} ${state.me.name}（あなた）</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}</small></div>`
+    `<div class="item"><strong>${state.me.role === "hunter" ? "🟢" : "🔵"} ${state.me.name}（あなた）</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}</small></div>`,
+    `<div class="item"><strong>🎮 GAME MAP</strong><small>他プレイヤーの正確な位置は非表示。気配だけ表示。</small></div>`
   ].concat(state.npcs.map(p => `<div class="item"><strong>${p.role === "hunter" ? "🟢" : "🔵"} ${p.name}</strong><small>HP ${Math.round(p.hp)} / ${CONFIG.maxHp}</small><br><small>距離 ${Math.round(meters(state.me, p))}m</small></div>`));
   $("players").innerHTML = rows.join("");
 }
@@ -354,6 +333,16 @@ function reset() {
   addLog("ゲームをリセットしました");
 }
 
+function toggleMapMode() {
+  state.mapMode = state.mapMode === "real" ? "game" : "real";
+  $("realMap").classList.toggle("hidden", state.mapMode === "game");
+  $("gameMap").classList.toggle("hidden", state.mapMode === "real");
+  $("mapModeBtn").textContent = state.mapMode === "real" ? "🎮 ゲーム地図" : "🗺 現実地図";
+  if (state.mapMode === "real" && state.map) {
+    setTimeout(() => state.map.invalidateSize(), 150);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initMap();
 
@@ -369,12 +358,10 @@ document.addEventListener("DOMContentLoaded", () => {
   $("gpsBtn").addEventListener("click", startGps);
   $("resetBtn").addEventListener("click", reset);
   $("roleBtn").addEventListener("click", () => setRole(state.me.role === "hunter" ? "runner" : "hunter"));
-  $("vibeBtn").addEventListener("click", () => {
-    vibrate([120, 80, 120]);
-    addLog("📳 バイブテスト");
-  });
+  $("vibeBtn").addEventListener("click", () => { vibrate([120, 80, 120]); addLog("📳 バイブテスト"); });
+  $("mapModeBtn").addEventListener("click", toggleMapMode);
 
-  addLog("STREET SURVIVAL β0.4 起動");
+  addLog("STREET SURVIVAL β0.5 起動");
   render();
   setInterval(gameTick, 1000);
 });

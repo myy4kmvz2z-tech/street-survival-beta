@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β0.4</title>
+  <title>STREET SURVIVAL β0.5</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="app-header">
   <div>
-    <h1>STREET SURVIVAL β0.4</h1>
-    <p>近づくほど震える。街がハンターを知らせる。</p>
+    <h1>STREET SURVIVAL β0.5</h1>
+    <p>街がゲームマップになる。</p>
   </div>
   <button id="resetBtn" class="ghost">リセット</button>
 </header>
@@ -49,16 +49,39 @@
     <p id="battleStatus" class="notice">現在：通常エリア</p>
   </section>
 
-  <section class="card">
-    <h2>地図フィールド</h2>
-    <div id="map"></div>
+  <section class="card map-card">
+    <div class="row between">
+      <h2>地図フィールド</h2>
+      <button id="mapModeBtn" class="mini">🎮 ゲーム地図</button>
+    </div>
+
+    <div id="realMap" class="map-panel"></div>
+
+    <div id="gameMap" class="game-map hidden">
+      <div class="zone-label zone-onn">🎵 お宿 Onn<br><small>LIVE SAFE</small></div>
+      <div class="zone-label zone-honmachi">🟡 本町<br><small>ALERT</small></div>
+      <div class="zone-label zone-shinmachi">🔴 新町<br><small>DANGER</small></div>
+
+      <div id="playerIcon" class="map-icon player">🟢</div>
+      <div class="map-icon spot coffee">☕<span>HP</span></div>
+      <div class="map-icon spot ramen">🍜<span>HP</span></div>
+      <div class="map-icon spot onn">🎵<span>LIVE</span></div>
+      <div id="bossIcon" class="map-icon boss">👹<span>BOSS</span></div>
+      <div id="missionIcon" class="map-icon mission">🎯<span>MISSION</span></div>
+
+      <div id="dangerRing" class="danger-ring hidden"></div>
+      <div class="street-line line-a"></div>
+      <div class="street-line line-b"></div>
+      <div class="street-line line-c"></div>
+    </div>
+
     <div class="controls">
       <button data-move="up">↑</button>
       <button data-move="left">←</button>
       <button data-move="down">↓</button>
       <button data-move="right">→</button>
     </div>
-    <p class="hint">テスト移動で15m/30m/7m判定を確認できます。</p>
+    <p class="hint">現実地図とゲーム地図を切り替えできます。</p>
   </section>
 
   <section class="card">
@@ -67,7 +90,7 @@
   </section>
 
   <section class="card">
-    <h2>参加者 / NPC</h2>
+    <h2>ゲーム情報</h2>
     <div id="players" class="player-list"></div>
   </section>
 

@@ -1,32 +1,27 @@
-# STREET SURVIVAL β4.0 Radar Mode
+# STREET SURVIVAL β5.0 Tactical HUD
 
 ## コンセプト
 
-通常時は地図ではなく「レーダー」。
-迷った時だけ現実地図を見る。
+街を歩く人が、スマホを見た瞬間に自分がRPGの主人公になったと感じるUI。
 
-## 主な変更
+## β5.0 変更点
 
-- ホーム中央をレーダー画面に変更
+- Tactical HUD風ホーム画面
+- 上部に巨大ステータス
+- 中央に丸型レーダー
 - 自分は常に中央
-- 周囲のスポットを相対位置で表示
-  - 🎵 LIVE SAFE
-  - ☕ HP
-  - 🍜 HP
-  - 🟡 本町
-  - 🔴 新町
-  - 👹 BOSS
-  - 🎯 MISSION
-- ハンター接近時は赤い点と危険リング
-- SAFE時はレーダー外周が緑に光る
-- BOSS出現時はレーダーに👹表示
-- FINAL BATTLE時はレーダーが赤く変化
-- 現実地図はボタンで切替
-- β3.0の巨大ステータス、運営モード、全画面演出を継続
+- HP / SAFE / LIVE / 本町 / 新町 / BOSS / MISSION / HUNTER をレーダー表示
+- SAFE時は緑波動
+- BOSS時はWARNING演出
+- FINAL時は赤いHUD演出
+- 下部は RADIO速報
+- 操作は GPS / ACTION / MENU の3つ
+- MENU内に運営・ログ・詳細を格納
+- 地図モードは RADAR / GAME / REAL 切替
 
 ## 更新方法
 
-GitHubのトップに以下4ファイルを上書きアップロードしてください。
+GitHubのトップに以下4ファイルを上書きしてください。
 
 - index.html
 - style.css

@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β4.0</title>
+  <title>STREET SURVIVAL β5.0</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β4.0</h1>
-    <p>街をレーダーで読む。リアルRPG端末。</p>
+    <h1>STREET SURVIVAL β5.0</h1>
+    <p>Tactical HUD / 街がゲーム盤になる。</p>
   </div>
-  <button id="resetBtn" class="ghost">リセット</button>
+  <button id="resetBtn" class="ghost">RESET</button>
 </header>
 
 <div id="fullScreenEvent" class="full-screen-event hidden">
@@ -22,7 +22,7 @@
   <span id="fullEventSub">HP吸収2倍・ポイント2倍</span>
 </div>
 
-<main class="app">
+<main class="hud">
 
   <section id="statusPanel" class="status-panel runner-mode">
     <div class="player-row">
@@ -35,7 +35,7 @@
     <div id="statusSub" class="status-sub">🏃 生存中</div>
     <div id="statusNote" class="status-note">👀 気配なし</div>
 
-    <div class="info-grid">
+    <div class="hud-stats">
       <div><span>❤️</span><b id="hpText">100/300</b></div>
       <div><span>👥</span><b id="totalPlayers">18</b></div>
       <div><span>🔥</span><b id="cityModeMini">NORMAL</b></div>
@@ -48,21 +48,23 @@
     </div>
   </section>
 
-  <section class="radar-section">
-    <div class="map-head">
-      <h2>📡 STREET RADAR</h2>
-      <button id="mapModeBtn" class="mini">🗺 現実地図</button>
+  <section class="scanner-section">
+    <div class="scanner-head">
+      <h2 id="modeTitle">🛰 RADAR</h2>
+      <button id="mapModeBtn" class="mini">🗺 MAP</button>
     </div>
 
     <div id="radar" class="radar">
       <div class="radar-grid"></div>
-      <div class="radar-ring ring-1"></div>
-      <div class="radar-ring ring-2"></div>
-      <div class="radar-ring ring-3"></div>
+      <div class="radar-ring r1"></div>
+      <div class="radar-ring r2"></div>
+      <div class="radar-ring r3"></div>
+      <div class="radar-cross h"></div>
+      <div class="radar-cross v"></div>
       <div id="radarSweep" class="radar-sweep"></div>
 
       <div id="radarYou" class="radar-dot you">🔵<span>YOU</span></div>
-      <div id="radarOnn" class="radar-dot live">🎵<span>Onn</span></div>
+      <div id="radarOnn" class="radar-dot live">🎵<span>LIVE</span></div>
       <div id="radarCoffee" class="radar-dot hp">☕<span>HP</span></div>
       <div id="radarFood" class="radar-dot hp">🍜<span>HP</span></div>
       <div id="radarHonmachi" class="radar-dot area yellow">🟡<span>本町</span></div>
@@ -71,27 +73,43 @@
       <div id="radarMission" class="radar-dot mission hidden">🎯<span>MISSION</span></div>
       <div id="radarHunter" class="radar-dot hunter-dot hidden">🔴<span>HUNTER</span></div>
 
-      <div id="radarAlert" class="radar-alert hidden">DANGER</div>
+      <div id="radarWarning" class="warning hidden">WARNING</div>
+      <div id="safePulse" class="safe-pulse hidden">SAFE</div>
+    </div>
+
+    <div id="gameMap" class="game-map hidden">
+      <div class="zone-label zone-onn">🎵 Onn<br><small>SAFE</small></div>
+      <div class="zone-label zone-honmachi">🟡 本町</div>
+      <div class="zone-label zone-shinmachi">🔴 新町</div>
+      <div class="map-icon player">🔵<span>YOU</span></div>
+      <div class="map-icon spot coffee">☕<span>HP</span></div>
+      <div class="map-icon spot ramen">🍜<span>HP</span></div>
+      <div class="map-icon spot onn">🎵<span>LIVE</span></div>
+      <div id="gameBoss" class="map-icon boss hidden">👹<span>BOSS</span></div>
+      <div id="gameMission" class="map-icon mission hidden">🎯<span>MISSION</span></div>
+      <div class="street-line line-a"></div>
+      <div class="street-line line-b"></div>
+      <div class="street-line line-c"></div>
     </div>
 
     <div id="realMap" class="real-map hidden"></div>
 
-    <div class="radar-caption">
-      <span id="radarRange">半径100m</span>
-      <span id="radarHint">通常はレーダー。迷ったら現実地図。</span>
+    <div class="scanner-caption">
+      <span id="radarRange">RANGE 100m</span>
+      <span id="radarHint">RADAR / GAME / REAL</span>
     </div>
   </section>
 
-  <div id="radioTicker" class="radio-ticker">📻 ゲーム開始 ｜ 👹 ボス出現 ｜ 🎯 本町集合 ｜ 🎵 LIVE SAFE</div>
+  <div id="radioTicker" class="radio-ticker">📻 ゲーム開始 ｜ 👹 BOSS ｜ 🎯 本町集合 ｜ 🎵 LIVE SAFE</div>
 
   <section class="action-row">
     <button id="gpsBtn" class="secondary">📍 GPS</button>
-    <button id="roleBtn" class="primary">🟢 HUNTER</button>
+    <button id="roleBtn" class="primary">🟢 ACTION</button>
     <button id="menuBtn" class="secondary">⚙ MENU</button>
   </section>
 
   <details id="menuPanel" class="menu-panel">
-    <summary>⚙ 詳細メニュー</summary>
+    <summary>⚙ MENU</summary>
 
     <div class="move-controls">
       <button data-move="up">↑</button>

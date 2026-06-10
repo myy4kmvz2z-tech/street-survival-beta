@@ -1,34 +1,34 @@
-# STREET SURVIVAL β0.9 Admin Mode版
+# STREET SURVIVAL β1.0 Stage1
 
-## β0.9 追加機能
+## 第一段階で追加したもの
 
-- PLAYER STATUSを見やすく整形
-  - 🟢 HUNTER 5
-  - 🔵 RUNNER 13
-  - 👹 BOSS 0
-  - 🎯 MISSION 0
-  - 🛡 SAFE 4
-- RUNNER / HUNTERをさらに大型表示
-- SAFE時に緑に光る演出
-- RADIOを短い運営メッセージ中心に変更
-- 街の状況モード追加
-  - NORMAL
-  - ALERT
-  - BOSS EVENT
-  - LIVE TIME
-  - FINAL BATTLE
-  - GAME END
-- FINAL BATTLE演出
+- 画面半分サイズの巨大RUNNER / HUNTER表示
+- RUNNER表示
+  - 🔵 RUNNER
+  - 🏃 生存中
+  - 👀 気配なし
+- HUNTER表示
+  - 🟢 HUNTER
+  - 🎯 TARGET
+  - 距離表示
+- SAFE演出強化
+  - 画面が緑に光る
+  - 🛡 SAFE
+  - お宿 Onn
+  - ❤️ HP CHARGE
+  - ❤️ +2 が浮く
+- BOSS演出強化
+  - 👹 BOSS EVENT
+  - 新町 出現！！
+  - 画面揺れ
+  - バイブ
+- FINAL BATTLE演出強化
   - 画面が赤くなる
-  - ラジオ速報
-  - ボス・ミッション同時表示
-- 運営モード追加
-  - 👹 ボス出現
-  - 🎯 本町集合
-  - 🎵 オルタLIVE
-  - 🛡 SAFE発動
   - 🔥 FINAL BATTLE
-  - 🏆 GAME END
+  - HP吸収2倍
+  - ポイント2倍
+  - ボス・ミッション同時発動
+- β0.9の運営モード・街状況・ゲーム地図を継続
 
 ## 更新方法
 

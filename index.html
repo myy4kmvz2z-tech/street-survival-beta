@@ -3,18 +3,24 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β0.9</title>
+  <title>STREET SURVIVAL β1.0</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="app-header">
   <div>
-    <h1>STREET SURVIVAL β0.9</h1>
-    <p>運営が街を動かす。中津川リアルRPG。</p>
+    <h1>STREET SURVIVAL β1.0</h1>
+    <p>第一段階。スマホが街RPGの端末になる。</p>
   </div>
   <button id="resetBtn" class="ghost">リセット</button>
 </header>
+
+<div id="fullScreenEvent" class="full-screen-event hidden">
+  <div id="fullEventIcon">🔥</div>
+  <strong id="fullEventTitle">FINAL BATTLE</strong>
+  <span id="fullEventSub">HP吸収2倍・ポイント2倍</span>
+</div>
 
 <main class="layout">
   <section class="card wide radio-card">
@@ -25,7 +31,7 @@
     </div>
 
     <div class="ticker-wrap">
-      <div id="radioTicker" class="ticker">📻 STREET SURVIVAL RADIO　｜　ゲーム開始準備中　｜　👹 ボス出現　｜　🎯 ミッション開始　｜　🎵 オルタLIVE　｜　🛡 SAFE発動</div>
+      <div id="radioTicker" class="ticker">📻 ゲーム開始準備中　｜　👹 ボス出現　｜　🎯 ミッション開始　｜　🎵 オルタLIVE　｜　🛡 SAFE発動　｜　🔥 FINAL BATTLE</div>
     </div>
 
     <div class="top-grid">
@@ -53,7 +59,7 @@
     </div>
   </section>
 
-  <section class="card">
+  <section class="card player-card">
     <div class="row between">
       <div>
         <h2>あなた</h2>
@@ -62,16 +68,18 @@
       <span id="roleBadge" class="badge runner">RUNNER</span>
     </div>
 
-    <div id="heroStatus" class="hero-status runner-hero">
-      <div class="hero-main">🔵 RUNNER</div>
-      <div class="hero-sub">🏃 生存中</div>
-      <div class="hero-note">👀 気配なし</div>
+    <div id="megaStatus" class="mega-status runner-mega">
+      <div class="mega-icon">🔵</div>
+      <div class="mega-title">RUNNER</div>
+      <div class="mega-sub">🏃 生存中</div>
+      <div class="mega-note">👀 気配なし</div>
     </div>
 
     <div id="safeBanner" class="safe-banner hidden">
       <strong>🛡 SAFE</strong>
       <span id="safePlace">お宿 Onn</span>
       <em>❤️ HP CHARGE</em>
+      <div class="safe-shine"></div>
     </div>
 
     <div class="hp-block">

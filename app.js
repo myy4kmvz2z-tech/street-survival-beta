@@ -1,7 +1,7 @@
 
 const DEFAULT_CENTER={lat:35.5008,lng:137.5032};
 const CONFIG={eventDurationSec:21600,initialHp:100,maxHp:300,minHp:0,drainPerSec:1,chargePerTick:2,chargeTickSec:5,hunterMaxSec:600,invincibleSec:5,battleRangeM:7,hunterSenseM:15,radarRangeM:100};
-const state={eventStartAt:Date.now(),cityMode:"NORMAL",participantCount:18,simulatedHunters:5,simulatedSafe:4,bossActive:false,missionActive:false,liveActive:false,viewMode:"radar",me:{id:"me",name:"RED",hp:100,points:0,role:"runner",lat:DEFAULT_CENTER.lat,lng:DEFAULT_CENTER.lng,hunterEndsAt:null,invincibleUntil:0,zone:"FIELD"},npcs:[{id:"dai",name:"DAI",hp:100,role:"hunter",lat:35.50095,lng:137.50325,hunterEndsAt:Date.now()+600000},{id:"shinya",name:"SHINYA",hp:100,role:"runner",lat:35.50055,lng:137.50285,hunterEndsAt:null},{id:"taro",name:"TARO",hp:100,role:"runner",lat:35.5011,lng:137.50365,hunterEndsAt:null}],zones:[{id:"onn",name:"お宿 Onn",lat:35.5008,lng:137.5032,radius:35},{id:"coffee",name:"喫茶店",lat:35.50125,lng:137.5020,radius:25},{id:"food",name:"飲食店",lat:35.49975,lng:137.5040,radius:25},{id:"honmachi",name:"本町",lat:35.50105,lng:137.5042,radius:30},{id:"shinmachi",name:"新町",lat:35.49975,lng:137.5046,radius:30}],log:[],map:null,meMarker:null,accuracyCircle:null,zoneLayers:[],npcMarkers:[],watchId:null,lastChargeAt:0,lastDrainAt:0,lastVibeAt:0};
+const state={eventStartAt:Date.now(),cityMode:"NORMAL",participantCount:18,simulatedHunters:5,simulatedSafe:4,bossActive:false,missionActive:false,liveActive:false,alertUntil:0,viewMode:"radar",me:{id:"me",name:"RED",hp:100,points:0,role:"runner",lat:DEFAULT_CENTER.lat,lng:DEFAULT_CENTER.lng,hunterEndsAt:null,invincibleUntil:0,zone:"FIELD"},npcs:[{id:"dai",name:"DAI",hp:100,role:"hunter",lat:35.50095,lng:137.50325,hunterEndsAt:Date.now()+600000},{id:"shinya",name:"SHINYA",hp:100,role:"runner",lat:35.50055,lng:137.50285,hunterEndsAt:null},{id:"taro",name:"TARO",hp:100,role:"runner",lat:35.5011,lng:137.50365,hunterEndsAt:null}],zones:[{id:"onn",name:"お宿 Onn",lat:35.5008,lng:137.5032,radius:35},{id:"coffee",name:"喫茶店",lat:35.50125,lng:137.5020,radius:25},{id:"food",name:"飲食店",lat:35.49975,lng:137.5040,radius:25},{id:"honmachi",name:"本町",lat:35.50105,lng:137.5042,radius:30},{id:"shinmachi",name:"新町",lat:35.49975,lng:137.5046,radius:30}],log:[],map:null,meMarker:null,accuracyCircle:null,zoneLayers:[],npcMarkers:[],watchId:null,lastChargeAt:0,lastDrainAt:0,lastVibeAt:0};
 const $=id=>document.getElementById(id);const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 
 // β6.0 Effect / Sound system. iPhone vibration fallback: light + animation + WebAudio.
@@ -178,7 +178,16 @@ function swapRolesWith(target){const oldRole=state.me.role;state.me.role=target.
 function hunterTimeout(){if(state.me.role==="hunter"&&state.me.hunterEndsAt&&Date.now()>=state.me.hunterEndsAt){state.me.role="runner";state.me.hunterEndsAt=null;state.me.invincibleUntil=Date.now()+CONFIG.invincibleSec*1000;addLog("⏰ ハンター10分終了");setRadio("ハンター終了。ランナーへ復帰。");}}
 function nearestByRole(role){const targets=state.npcs.filter(p=>p.role===role);if(!targets.length)return null;return targets.sort((a,b)=>meters(state.me,a)-meters(state.me,b))[0];}
 function isInvincible(){return Date.now()<state.me.invincibleUntil;}
-function updateAlert(nearest,distance,zone){const box=$("alertStatus");document.body.classList.remove("danger-flash","boss-shake","safe-glow");if(state.cityMode==="FINAL")document.body.classList.add("final-battle");box.className="alert-box";if(zone){box.textContent=`🛡 ${zone.name}：SAFE / HP CHARGE`;box.classList.add("safe");updateStatus("safe-mode","🛡","SAFE",zone.name,"❤️ HP CHARGE");document.body.classList.add("safe-glow");updateRadar(nearest,distance,zone);return;}if(isInvincible()){const s=Math.ceil((state.me.invincibleUntil-Date.now())/1000);box.textContent=`🛡 無敵中：${s}秒`;box.classList.add("safe");updateStatus("safe-mode","🛡","INVINCIBLE",`${s}秒`,"態勢を立て直せ");updateRadar(nearest,distance,null);return;}if(state.me.role==="hunter"){if(nearest&&distance<=CONFIG.hunterSenseM){box.textContent=`📳 TARGET ${distance.toFixed(1)}m`;box.classList.add("level2");updateStatus("hunter-mode","🟢","HUNTER","🎯 TARGET",`${distance.toFixed(1)}m`);alertVibration("hunterSense");}else{box.textContent="🟢 ハンター：気配なし";updateStatus("hunter-mode","🟢","HUNTER","🎯 SEARCH","気配なし");}updateRadar(nearest,distance,null);return;}if(!nearest){box.textContent="🔵 ランナー：通常";updateStatus("runner-mode","🔵","RUNNER","🏃 生存中","👀 気配なし");updateRadar(null,999,null);return;}if(distance<=CONFIG.battleRangeM){box.textContent=`⚔ CONTACT ${distance.toFixed(1)}m`;box.classList.add("level3");document.body.classList.add("danger-flash");updateStatus("battle-mode","⚔","BATTLE","HP吸収中！",`${distance.toFixed(1)}m`);alertVibration("contact");}else if(distance<=10){box.textContent=`🚨 DANGER ${distance.toFixed(1)}m`;box.classList.add("level3");document.body.classList.add("danger-flash");updateStatus("battle-mode","🚨","DANGER","逃げろ！",`${distance.toFixed(1)}m`);alertVibration("runner10");}else if(distance<=20){box.textContent=`⚠ ハンター接近 ${Math.round(distance)}m`;box.classList.add("level2");updateStatus("runner-mode","⚠","ALERT","ハンター接近",`${Math.round(distance)}m`);alertVibration("runner20");}else if(distance<=30){box.textContent=`👀 気配 ${Math.round(distance)}m`;box.classList.add("level1");updateStatus("runner-mode","🔵","RUNNER","🏃 生存中",`👀 気配 ${Math.round(distance)}m`);alertVibration("runner30");}else{box.textContent="🔵 ランナー：通常";updateStatus("runner-mode","🔵","RUNNER","🏃 生存中","👀 気配なし");}updateRadar(nearest,distance,null);}
+function updateAlert(nearest,distance,zone){const box=$("alertStatus");document.body.classList.remove("danger-flash","boss-shake","safe-glow");
+if(state.cityMode==="ALERT" && Date.now() < (state.alertUntil || 0)){
+  if(box){
+    box.textContent="⚠️ ALERT / 警戒発令中";
+    box.className="alert-box level2";
+  }
+  updateStatus("alert-mode","⚠️","ALERT","警戒発令中","街に注意");
+  updateRadar(nearest,distance,null);
+  return;
+}if(state.cityMode==="FINAL")document.body.classList.add("final-battle");box.className="alert-box";if(zone){box.textContent=`🛡 ${zone.name}：SAFE / HP CHARGE`;box.classList.add("safe");updateStatus("safe-mode","🛡","SAFE",zone.name,"❤️ HP CHARGE");document.body.classList.add("safe-glow");updateRadar(nearest,distance,zone);return;}if(isInvincible()){const s=Math.ceil((state.me.invincibleUntil-Date.now())/1000);box.textContent=`🛡 無敵中：${s}秒`;box.classList.add("safe");updateStatus("safe-mode","🛡","INVINCIBLE",`${s}秒`,"態勢を立て直せ");updateRadar(nearest,distance,null);return;}if(state.me.role==="hunter"){if(nearest&&distance<=CONFIG.hunterSenseM){box.textContent=`📳 TARGET ${distance.toFixed(1)}m`;box.classList.add("level2");updateStatus("hunter-mode","🟢","HUNTER","🎯 TARGET",`${distance.toFixed(1)}m`);alertVibration("hunterSense");}else{box.textContent="🟢 ハンター：気配なし";updateStatus("hunter-mode","🟢","HUNTER","🎯 SEARCH","気配なし");}updateRadar(nearest,distance,null);return;}if(!nearest){box.textContent="🔵 ランナー：通常";updateStatus("runner-mode","🔵","RUNNER","🏃 生存中","👀 気配なし");updateRadar(null,999,null);return;}if(distance<=CONFIG.battleRangeM){box.textContent=`⚔ CONTACT ${distance.toFixed(1)}m`;box.classList.add("level3");document.body.classList.add("danger-flash");updateStatus("battle-mode","⚔","BATTLE","HP吸収中！",`${distance.toFixed(1)}m`);alertVibration("contact");}else if(distance<=10){box.textContent=`🚨 DANGER ${distance.toFixed(1)}m`;box.classList.add("level3");document.body.classList.add("danger-flash");updateStatus("battle-mode","🚨","DANGER","逃げろ！",`${distance.toFixed(1)}m`);alertVibration("runner10");}else if(distance<=20){box.textContent=`⚠ ハンター接近 ${Math.round(distance)}m`;box.classList.add("level2");updateStatus("runner-mode","⚠","ALERT","ハンター接近",`${Math.round(distance)}m`);alertVibration("runner20");}else if(distance<=30){box.textContent=`👀 気配 ${Math.round(distance)}m`;box.classList.add("level1");updateStatus("runner-mode","🔵","RUNNER","🏃 生存中",`👀 気配 ${Math.round(distance)}m`);alertVibration("runner30");}else{box.textContent="🔵 ランナー：通常";updateStatus("runner-mode","🔵","RUNNER","🏃 生存中","👀 気配なし");}updateRadar(nearest,distance,null);}
 function showChargeFloat(){playTone("safe");const el=$("chargeFloat");el.classList.remove("hidden");el.style.animation="none";void el.offsetWidth;el.style.animation="";setTimeout(()=>el.classList.add("hidden"),900);}
 function gameTick(){const now=Date.now();hunterTimeout();state.npcs.forEach(p=>{p.lat+=(Math.random()-.5)*0.00006;p.lng+=(Math.random()-.5)*0.00006;if(p.role==="hunter"&&p.hunterEndsAt&&now>=p.hunterEndsAt){p.role="runner";p.hunterEndsAt=null;}});renderNpcMarkers();const zone=checkZone();if(zone){$("battleStatus").textContent=`🛡 ${zone.name}：HP CHARGE中`;updateAlert(null,999,zone);if(now-state.lastChargeAt>=CONFIG.chargeTickSec*1000){const before=state.me.hp;state.me.hp=clamp(state.me.hp+CONFIG.chargePerTick,CONFIG.minHp,CONFIG.maxHp);state.lastChargeAt=now;if(state.me.hp>before){addLog(`❤️ ${zone.name}でHP +${CONFIG.chargePerTick}`);showChargeFloat();}}render();return;}const targetRole=state.me.role==="hunter"?"runner":"hunter";const nearest=nearestByRole(targetRole);const d=nearest?meters(state.me,nearest):999;updateAlert(nearest,d,null);if(!isInvincible()&&nearest&&d<=CONFIG.battleRangeM){if(now-state.lastDrainAt>=1000){state.lastDrainAt=now;const drain=state.cityMode==="FINAL"?CONFIG.drainPerSec*2:CONFIG.drainPerSec;if(state.me.role==="hunter"){nearest.hp=clamp(nearest.hp-drain,CONFIG.minHp,CONFIG.maxHp);state.me.hp=clamp(state.me.hp+drain,CONFIG.minHp,CONFIG.maxHp);state.me.points+=drain;$("battleStatus").textContent=`⚔ ${nearest.name}から吸収中 ${d.toFixed(1)}m`;if(nearest.hp<=0)swapRolesWith(nearest);}else{state.me.hp=clamp(state.me.hp-drain,CONFIG.minHp,CONFIG.maxHp);nearest.hp=clamp(nearest.hp+drain,CONFIG.minHp,CONFIG.maxHp);$("battleStatus").textContent=`⚠ ${nearest.name}に吸収されています ${d.toFixed(1)}m`;if(state.me.hp<=0)swapRolesWith(nearest);}}}else if(nearest){$("battleStatus").textContent=`通常エリア：最寄り ${nearest.name} ${Math.round(d)}m`;}render();}
 function formatTime(sec){sec=Math.max(0,Math.floor(sec));const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;return h>0?`${h}:${String(m).padStart(2,"0")}`:`${m}:${String(s).padStart(2,"0")}`;}
@@ -189,7 +198,7 @@ function move(direction){const step=.00018;let lat=state.me.lat,lng=state.me.lng
 function reset(){state.eventStartAt=Date.now();state.me.hp=CONFIG.initialHp;state.me.points=0;state.me.role="runner";state.me.hunterEndsAt=null;state.me.invincibleUntil=0;state.me.lat=DEFAULT_CENTER.lat;state.me.lng=DEFAULT_CENTER.lng;state.bossActive=false;state.missionActive=false;state.liveActive=false;state.log=[];state.lastVibeAt=0;setCityMode("NORMAL");setRadio("ゲーム開始");updateMePosition(state.me.lat,state.me.lng,10,true);addLog("RESET");}
 function cycleViewMode(){const modes=["radar","game","real"];state.viewMode=modes[(modes.indexOf(state.viewMode)+1)%modes.length];$("radar").classList.toggle("hidden",state.viewMode!=="radar");$("gameMap").classList.toggle("hidden",state.viewMode!=="game");$("realMap").classList.toggle("hidden",state.viewMode!=="real");$("modeTitle").textContent=state.viewMode==="radar"?"🛰 RADAR":state.viewMode==="game"?"🗺 GAME MAP":"🗺 REAL MAP";$("mapModeBtn").textContent=state.viewMode==="radar"?"🗺 MAP":state.viewMode==="game"?"🌍 REAL":"🛰 RADAR";if(state.viewMode==="real"&&state.map)setTimeout(()=>state.map.invalidateSize(),150);}
 function normalMode(){state.bossActive=false;state.missionActive=false;state.liveActive=false;setCityMode("NORMAL");setRadio("通常モード");}
-function alertMode(){setCityMode("ALERT");setRadio("警戒情報。本町・新町に動きあり。");}
+function alertMode(){hardAlertEffect("⚠️ 警戒モード発令！街に注意してください。");}
 function triggerBoss(){state.bossActive=!state.bossActive;if(state.bossActive){setCityMode("BOSS");setRadio("👹 BOSS DETECTED");updateStatus("boss-mode","👹","WARNING","BOSS DETECTED","新町");showFullEvent("👹","BOSS EVENT","新町 出現！！","boss");showEffect("boss","👹","BOSS DETECTED");document.body.classList.add("boss-shake");setTimeout(()=>document.body.classList.remove("boss-shake"),2200);vibrate([200,80,200,80,300]);}else{setCityMode("NORMAL");setRadio("BOSS終了");}render();}
 function triggerMission(){state.missionActive=!state.missionActive;if(state.missionActive){setCityMode("ALERT");setRadio("🎯 本町集合ミッション");updateStatus("boss-mode","🎯","MISSION","本町集合","報酬あり");showEffect("mission","🎯","MISSION");vibrate([120,80,120]);}else{setRadio("MISSION終了");}render();}
 function triggerLive(){state.liveActive=true;setCityMode("LIVE");setRadio("🎵 オルタLIVE / SAFE");updateStatus("safe-mode","🎵","LIVE SAFE","お宿 Onn","戦闘停止");showFullEvent("🎵","LIVE SAFE","お宿 Onn","");showEffect("live","🎵","LIVE SAFE");vibrate([100,60,100,60,100]);render();}
@@ -203,7 +212,7 @@ if($("missionSoundBtn")) $("missionSoundBtn").addEventListener("click",()=>{show
 if($("liveSoundBtn")) $("liveSoundBtn").addEventListener("click",()=>{showEffect("live","🎵","LIVE SOUND");addLog("🎵 LIVE SOUND");});
 if($("finalSoundBtn")) $("finalSoundBtn").addEventListener("click",()=>{showEffect("final","🔥","FINAL SOUND");addLog("🔥 FINAL SOUND");});
 if($("endSoundBtn")) $("endSoundBtn").addEventListener("click",()=>{showEffect("end","🏆","END SOUND");addLog("🏆 END SOUND");});
-$("mapModeBtn").addEventListener("click",cycleViewMode);addLog("STREET SURVIVAL β8.1 起動");initFirebasePlayer();render();setInterval(gameTick,1000);setInterval(render,1000);});
+$("mapModeBtn").addEventListener("click",cycleViewMode);addLog("STREET SURVIVAL β8.2 起動");initFirebasePlayer();render();setInterval(gameTick,1000);setInterval(render,1000);});
 
 
 
@@ -227,7 +236,7 @@ function receiveRadio(message){
 }
 
 
-// β8.1 Firebase realtime receive
+// β8.2 Firebase realtime receive
 let firebaseApp = null;
 let firebaseDb = null;
 let firebaseLastCommandId = null;
@@ -283,7 +292,7 @@ function applyAdminCommand(cmd){
   if(!cmd || cmd.id === lastAdminCommandId) return;
   lastAdminCommandId = cmd.id;
   if(cmd.type === "NORMAL") normalMode();
-  if(cmd.type === "ALERT") alertMode();
+  if(cmd.type === "ALERT") hardAlertEffect(cmd.message || "⚠️ 警戒モード発令！");
   if(cmd.type === "BOSS") triggerBoss();
   if(cmd.type === "MISSION") triggerMission();
   if(cmd.type === "LIVE") triggerLive();
@@ -304,7 +313,7 @@ setInterval(pollAdminCommand, 800);
 window.addEventListener("storage", pollAdminCommand);
 
 
-/* β8.1 FIREBASE FIX - PLAYER */
+/* β8.2 FIREBASE FIX - PLAYER */
 let ssFirebasePlayerDb = null;
 let ssFirebasePlayerLastId = null;
 
@@ -338,7 +347,7 @@ function ssApplyFirebaseCommand(cmd){
       return;
     }
     if(cmd.type === "NORMAL" && typeof normalMode === "function") normalMode();
-    if(cmd.type === "ALERT" && typeof alertMode === "function") alertMode();
+    if(cmd.type === "ALERT") hardAlertEffect(cmd.message || "⚠️ 警戒モード発令！");
     if(cmd.type === "BOSS" && typeof triggerBoss === "function") triggerBoss();
     if(cmd.type === "MISSION" && typeof triggerMission === "function") triggerMission();
     if(cmd.type === "LIVE" && typeof triggerLive === "function") triggerLive();
@@ -389,3 +398,68 @@ window.addEventListener("load", ()=>{
     if(!ssFirebasePlayerDb) initFirebasePlayer();
   }, 300);
 });
+
+
+
+/* β8.2 ALERT HARD FIX */
+function ensureAlertToast(){
+  let el = document.getElementById("alertToast");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "alertToast";
+    el.className = "alert-toast hidden";
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
+function hardAlertEffect(message){
+  try{
+    state.cityMode = "ALERT";
+    state.alertUntil = Date.now() + 6500;
+    state.bossActive = false;
+    state.missionActive = false;
+    state.liveActive = false;
+
+    const alertBox = document.getElementById("alertStatus");
+    if(alertBox){
+      alertBox.textContent = "⚠️ ALERT / 警戒発令中";
+      alertBox.className = "alert-box level2";
+    }
+    const statusPanel = document.getElementById("statusPanel");
+    if(statusPanel){
+      statusPanel.classList.add("alert-hard");
+      setTimeout(()=>statusPanel.classList.remove("alert-hard"), 1800);
+    }
+
+    document.body.classList.remove("alert-flash");
+    void document.body.offsetWidth;
+    document.body.classList.add("alert-flash");
+    setTimeout(()=>document.body.classList.remove("alert-flash"), 1300);
+
+    const toast = ensureAlertToast();
+    toast.textContent = "⚠️ ALERT / 警戒発令";
+    toast.classList.remove("hidden");
+    clearTimeout(hardAlertEffect.toastTimer);
+    hardAlertEffect.toastTimer = setTimeout(()=>toast.classList.add("hidden"), 1800);
+
+    if(typeof receiveRadio === "function") receiveRadio(message || "⚠️ 警戒モード発令！");
+    if(typeof showEffect === "function") showEffect("alert", "⚠️", "ALERT", false);
+    if(typeof playTone === "function") {
+      playTone("mission");
+      setTimeout(()=>playTone("boss"), 160);
+    }
+    if(navigator.vibrate) navigator.vibrate([90,40,90]);
+
+    if(typeof addLog === "function") addLog("⚠️ ALERT受信 / 警戒発令");
+    if(typeof updateStatus === "function") updateStatus("alert-mode", "⚠️", "ALERT", "警戒エリア");
+    if(typeof render === "function") render();
+  }catch(e){
+    console.error("hardAlertEffect error", e);
+  }
+}
+
+// 既存alertModeが弱い場合でも強制的に上書き
+window.alertMode = function(){
+  hardAlertEffect("⚠️ 警戒モード発令！街に注意してください。");
+};

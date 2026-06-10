@@ -341,6 +341,7 @@ function ssApplyFirebaseCommand(cmd){
   ssFirebasePlayerLastId = cmd.id || String(Date.now());
 
   try{
+    notifyForCommand(cmd);
     if(cmd.type === "RADIO"){
       if(typeof receiveRadio === "function") receiveRadio(cmd.message || "運営速報");
       else if(typeof setRadio === "function") setRadio(cmd.message || "運営速報");
@@ -463,3 +464,132 @@ function hardAlertEffect(message){
 window.alertMode = function(){
   hardAlertEffect("⚠️ 警戒モード発令！街に注意してください。");
 };
+
+
+/* β9.0 Push Notify / Local Notification */
+let ssNotifyReady = false;
+
+function ssNotifyStatus(text){
+  const el = document.getElementById("notifyStatus");
+  if(el) el.textContent = text;
+}
+
+async function initStreetSurvivalNotifications(){
+  try{
+    if(!("Notification" in window)){
+      ssNotifyStatus("通知: 非対応");
+      return;
+    }
+
+    if("serviceWorker" in navigator){
+      try{
+        await navigator.serviceWorker.register("./sw.js");
+        if(typeof addLog === "function") addLog("🔔 Service Worker登録");
+      }catch(e){
+        if(typeof addLog === "function") addLog("🔔 SW登録失敗: " + e.message);
+      }
+    }
+
+    if(Notification.permission === "granted"){
+      ssNotifyReady = true;
+      ssNotifyStatus("通知: 許可済み");
+      return;
+    }
+
+    if(Notification.permission === "denied"){
+      ssNotifyStatus("通知: 拒否中");
+      return;
+    }
+
+    ssNotifyStatus("通知: 未許可");
+  }catch(e){
+    console.error(e);
+    ssNotifyStatus("通知: エラー");
+  }
+}
+
+async function requestStreetSurvivalNotificationPermission(){
+  try{
+    if(!("Notification" in window)){
+      alert("この端末はWeb通知に対応していません。");
+      return;
+    }
+    const result = await Notification.requestPermission();
+    if(result === "granted"){
+      ssNotifyReady = true;
+      ssNotifyStatus("通知: 許可済み");
+      sendLocalNotification("🔔 STREET SURVIVAL", "通知が有効になりました。");
+      if(typeof addLog === "function") addLog("🔔 通知許可OK");
+    }else{
+      ssNotifyReady = false;
+      ssNotifyStatus("通知: 未許可");
+      if(typeof addLog === "function") addLog("🔔 通知が許可されませんでした");
+    }
+  }catch(e){
+    console.error(e);
+    ssNotifyStatus("通知: エラー");
+  }
+}
+
+function notifyTextForCommand(cmd){
+  const type = cmd?.type || "RADIO";
+  const msg = cmd?.message || "";
+  const map = {
+    NORMAL: ["🌆 NORMAL", msg || "通常モードです。"],
+    ALERT: ["⚠️ ALERT", msg || "警戒エリア発生！街に注意してください。"],
+    BOSS: ["👹 BOSS出現！", msg || "新町にBOSS出現！"],
+    MISSION: ["🎯 MISSION", msg || "本町集合ミッション開始！"],
+    LIVE: ["🎵 LIVE開始！", msg || "オルタネーターズLIVE開始！"],
+    SAFE: ["🛡 SAFE発動！", msg || "お宿 Onn SAFE ZONE発動！"],
+    FINAL: ["🔥 FINAL BATTLE", msg || "FINAL BATTLE開始！"],
+    END: ["🏆 GAME END", msg || "ゲーム終了！"],
+    RADIO: ["📡 STREET RADIO", msg || "運営速報"]
+  };
+  return map[type] || ["📡 STREET SURVIVAL", msg || type];
+}
+
+async function sendLocalNotification(title, body){
+  try{
+    document.body.classList.remove("notify-flash");
+    void document.body.offsetWidth;
+    document.body.classList.add("notify-flash");
+    setTimeout(()=>document.body.classList.remove("notify-flash"), 1200);
+
+    if(!("Notification" in window) || Notification.permission !== "granted") return;
+
+    const options = {
+      body,
+      icon: "./icon-192.png",
+      badge: "./icon-192.png",
+      tag: "street-survival-event",
+      renotify: true
+    };
+
+    if("serviceWorker" in navigator){
+      const reg = await navigator.serviceWorker.getRegistration();
+      if(reg && reg.showNotification){
+        reg.showNotification(title, options);
+        return;
+      }
+    }
+
+    new Notification(title, options);
+  }catch(e){
+    console.error("Notification error", e);
+  }
+}
+
+function notifyForCommand(cmd){
+  const [title, body] = notifyTextForCommand(cmd);
+  sendLocalNotification(title, body);
+}
+
+window.addEventListener("load", ()=>{
+  setTimeout(()=>{
+    initStreetSurvivalNotifications();
+    const btn = document.getElementById("notifyBtn");
+    if(btn){
+      btn.addEventListener("click", requestStreetSurvivalNotificationPermission);
+    }
+  }, 500);
+});

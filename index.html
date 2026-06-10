@@ -3,15 +3,17 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β8.3</title>
+  <title>STREET SURVIVAL β9.0</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#07090c">
 </head>
 <body>
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β8.3</h1>
-    <p>PLAYER MODE / ALERT Priority Fix / リアルタイム受信。</p>
+    <h1>STREET SURVIVAL β9.0</h1>
+    <p>PLAYER MODE / Push Notify / 通知対応。</p>
   </div>
   <button id="resetBtn" class="ghost">RESET</button>
 </header>
@@ -115,6 +117,11 @@
   </section>
 
   <div id="radioTicker" class="radio-ticker">📻 ゲーム開始 ｜ 👹 BOSS ｜ 🎯 本町集合 ｜ 🎵 LIVE SAFE</div>
+
+  <section class="notify-panel">
+    <button id="notifyBtn" class="notify-btn">🔔 通知を許可</button>
+    <span id="notifyStatus">通知: 未確認</span>
+  </section>
 
   <section class="action-row">
     <button id="gpsBtn" class="secondary">📍 GPS</button>

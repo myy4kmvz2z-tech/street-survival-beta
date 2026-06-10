@@ -193,7 +193,7 @@ function gameTick(){const now=Date.now();hunterTimeout();state.npcs.forEach(p=>{
 function formatTime(sec){sec=Math.max(0,Math.floor(sec));const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;return h>0?`${h}:${String(m).padStart(2,"0")}`:`${m}:${String(s).padStart(2,"0")}`;}
 function renderPlayerCounts(){const hunter=state.simulatedHunters+(state.me.role==="hunter"?1:0),boss=state.bossActive?1:0,mission=state.missionActive?1:0,runner=Math.max(0,state.participantCount-hunter);$("totalPlayers").textContent=`${state.participantCount}`;$("totalPlayersFull").textContent=`${state.participantCount}人参加中`;$("hunterCount").textContent=hunter;$("runnerCount").textContent=runner;$("bossCount").textContent=boss;$("missionCount").textContent=mission;$("safeCount").textContent=state.simulatedSafe+(state.me.zone!=="FIELD"?1:0);}
 function render(){if(!$("hpText"))return;state.me.name=$("playerName")?.value||"RED";$("hpText").textContent=`${Math.round(state.me.hp)}/${CONFIG.maxHp}`;$("hpBar").style.width=`${(state.me.hp/CONFIG.maxHp)*100}%`;$("points").textContent=Math.round(state.me.points);$("hunterTimer").textContent=(state.me.role==="hunter"&&state.me.hunterEndsAt)?Math.max(0,Math.ceil((state.me.hunterEndsAt-Date.now())/1000)):"-";$("zoneState").textContent=state.me.zone==="FIELD"?"FIELD":"SAFE";$("cityModeMini").textContent=state.cityMode;const elapsed=(Date.now()-state.eventStartAt)/1000;$("eventTimer").textContent=formatTime(CONFIG.eventDurationSec-elapsed);const badge=$("roleBadge");badge.textContent=state.me.role==="hunter"?"HUNTER":"RUNNER";badge.className=`badge ${state.me.role==="hunter"?"hunter":"runner"} ${isInvincible()?"invincible":""}`;$("roleBtn").textContent=state.me.role==="hunter"?"🔵 ACTION":"🟢 ACTION";renderPlayerCounts();renderPlayers();$("log").innerHTML=state.log.map(line=>`<div>${line}</div>`).join("");}
-function renderPlayers(){const rows=[`<div class="item"><strong>${state.me.role==="hunter"?"🟢":"🔵"} ${state.me.name}</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}${isInvincible()?" / 無敵中":""}</small></div>`,`<div class="item"><strong>β6.1 Effects HUD</strong><small>FXボタン修正。光・音・揺れが必ず出る。</small></div>`].concat(state.npcs.map(p=>`<div class="item"><strong>${p.role==="hunter"?"🟢":"🔵"} ${p.name}</strong><small>HP ${Math.round(p.hp)} / ${CONFIG.maxHp}</small><br><small>距離 ${Math.round(meters(state.me,p))}m</small></div>`));$("players").innerHTML=rows.join("");}
+function renderPlayers(){const rows=[`<div class="item"><strong>${state.me.role==="hunter"?"🟢":"🔵"} ${state.me.name}</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}${isInvincible()?" / 無敵中":""}</small></div>`,`<div class="item"><strong>β9.1 Ultimate Push HUD</strong><small>通知・光・音・揺れ・Firebase連携。</small></div>`].concat(state.npcs.map(p=>`<div class="item"><strong>${p.role==="hunter"?"🟢":"🔵"} ${p.name}</strong><small>HP ${Math.round(p.hp)} / ${CONFIG.maxHp}</small><br><small>距離 ${Math.round(meters(state.me,p))}m</small></div>`));$("players").innerHTML=rows.join("");}
 function move(direction){const step=.00018;let lat=state.me.lat,lng=state.me.lng;if(direction==="up")lat+=step;if(direction==="down")lat-=step;if(direction==="left")lng-=step;if(direction==="right")lng+=step;updateMePosition(lat,lng,10,true);addLog(`テスト移動：${direction}`);}
 function reset(){state.eventStartAt=Date.now();state.me.hp=CONFIG.initialHp;state.me.points=0;state.me.role="runner";state.me.hunterEndsAt=null;state.me.invincibleUntil=0;state.me.lat=DEFAULT_CENTER.lat;state.me.lng=DEFAULT_CENTER.lng;state.bossActive=false;state.missionActive=false;state.liveActive=false;state.log=[];state.lastVibeAt=0;setCityMode("NORMAL");setRadio("ゲーム開始");updateMePosition(state.me.lat,state.me.lng,10,true);addLog("RESET");}
 function cycleViewMode(){const modes=["radar","game","real"];state.viewMode=modes[(modes.indexOf(state.viewMode)+1)%modes.length];$("radar").classList.toggle("hidden",state.viewMode!=="radar");$("gameMap").classList.toggle("hidden",state.viewMode!=="game");$("realMap").classList.toggle("hidden",state.viewMode!=="real");$("modeTitle").textContent=state.viewMode==="radar"?"🛰 RADAR":state.viewMode==="game"?"🗺 GAME MAP":"🗺 REAL MAP";$("mapModeBtn").textContent=state.viewMode==="radar"?"🗺 MAP":state.viewMode==="game"?"🌍 REAL":"🛰 RADAR";if(state.viewMode==="real"&&state.map)setTimeout(()=>state.map.invalidateSize(),150);}
@@ -289,6 +289,7 @@ async function initFirebasePlayer(){
 // β7.0: receive admin commands from admin.html on same browser via localStorage.
 let lastAdminCommandId = null;
 function applyAdminCommand(cmd){
+  notifyStreetSurvivalCommand(cmd);
   if(!cmd || cmd.id === lastAdminCommandId) return;
   lastAdminCommandId = cmd.id;
   if(cmd.type === "NORMAL") normalMode();
@@ -341,7 +342,6 @@ function ssApplyFirebaseCommand(cmd){
   ssFirebasePlayerLastId = cmd.id || String(Date.now());
 
   try{
-    notifyForCommand(cmd);
     if(cmd.type === "RADIO"){
       if(typeof receiveRadio === "function") receiveRadio(cmd.message || "運営速報");
       else if(typeof setRadio === "function") setRadio(cmd.message || "運営速報");
@@ -466,25 +466,40 @@ window.alertMode = function(){
 };
 
 
-/* β9.0 Push Notify / Local Notification */
+
+/* β9.1 ULTIMATE PUSH NOTIFY */
 let ssNotifyReady = false;
 
-function ssNotifyStatus(text){
+function ssPushStatus(text){
   const el = document.getElementById("notifyStatus");
   if(el) el.textContent = text;
 }
 
-async function initStreetSurvivalNotifications(){
+function ssPushToast(text){
+  let el = document.getElementById("pushToast");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "pushToast";
+    el.className = "push-toast hidden";
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.classList.remove("hidden");
+  clearTimeout(ssPushToast.timer);
+  ssPushToast.timer = setTimeout(()=>el.classList.add("hidden"), 1700);
+}
+
+async function initStreetSurvivalPush(){
   try{
     if(!("Notification" in window)){
-      ssNotifyStatus("通知: 非対応");
+      ssPushStatus("通知: この端末は非対応");
       return;
     }
 
     if("serviceWorker" in navigator){
       try{
-        await navigator.serviceWorker.register("./sw.js");
-        if(typeof addLog === "function") addLog("🔔 Service Worker登録");
+        await navigator.serviceWorker.register("./sw.js?v=91");
+        if(typeof addLog === "function") addLog("🔔 Service Worker登録OK");
       }catch(e){
         if(typeof addLog === "function") addLog("🔔 SW登録失敗: " + e.message);
       }
@@ -492,63 +507,64 @@ async function initStreetSurvivalNotifications(){
 
     if(Notification.permission === "granted"){
       ssNotifyReady = true;
-      ssNotifyStatus("通知: 許可済み");
-      return;
+      ssPushStatus("通知: 許可済み");
+    }else if(Notification.permission === "denied"){
+      ssNotifyReady = false;
+      ssPushStatus("通知: 拒否中");
+    }else{
+      ssNotifyReady = false;
+      ssPushStatus("通知: 未許可");
     }
-
-    if(Notification.permission === "denied"){
-      ssNotifyStatus("通知: 拒否中");
-      return;
-    }
-
-    ssNotifyStatus("通知: 未許可");
   }catch(e){
-    console.error(e);
-    ssNotifyStatus("通知: エラー");
+    console.error("push init error", e);
+    ssPushStatus("通知: エラー");
   }
 }
 
-async function requestStreetSurvivalNotificationPermission(){
+async function requestStreetSurvivalPush(){
   try{
     if(!("Notification" in window)){
       alert("この端末はWeb通知に対応していません。");
       return;
     }
+
     const result = await Notification.requestPermission();
     if(result === "granted"){
       ssNotifyReady = true;
-      ssNotifyStatus("通知: 許可済み");
-      sendLocalNotification("🔔 STREET SURVIVAL", "通知が有効になりました。");
+      ssPushStatus("通知: 許可済み");
+      ssPushToast("🔔 通知ON");
+      await sendStreetSurvivalNotification("🔔 STREET SURVIVAL", "通知が有効になりました。");
       if(typeof addLog === "function") addLog("🔔 通知許可OK");
     }else{
       ssNotifyReady = false;
-      ssNotifyStatus("通知: 未許可");
-      if(typeof addLog === "function") addLog("🔔 通知が許可されませんでした");
+      ssPushStatus("通知: 未許可");
+      ssPushToast("通知が許可されませんでした");
+      if(typeof addLog === "function") addLog("🔔 通知未許可");
     }
   }catch(e){
-    console.error(e);
-    ssNotifyStatus("通知: エラー");
+    console.error("permission error", e);
+    ssPushStatus("通知: エラー");
   }
 }
 
-function notifyTextForCommand(cmd){
-  const type = cmd?.type || "RADIO";
-  const msg = cmd?.message || "";
+function streetSurvivalNotifyText(cmd){
+  const type = cmd && cmd.type ? cmd.type : "RADIO";
+  const msg = cmd && cmd.message ? cmd.message : "";
   const map = {
-    NORMAL: ["🌆 NORMAL", msg || "通常モードです。"],
-    ALERT: ["⚠️ ALERT", msg || "警戒エリア発生！街に注意してください。"],
-    BOSS: ["👹 BOSS出現！", msg || "新町にBOSS出現！"],
-    MISSION: ["🎯 MISSION", msg || "本町集合ミッション開始！"],
-    LIVE: ["🎵 LIVE開始！", msg || "オルタネーターズLIVE開始！"],
-    SAFE: ["🛡 SAFE発動！", msg || "お宿 Onn SAFE ZONE発動！"],
-    FINAL: ["🔥 FINAL BATTLE", msg || "FINAL BATTLE開始！"],
-    END: ["🏆 GAME END", msg || "ゲーム終了！"],
-    RADIO: ["📡 STREET RADIO", msg || "運営速報"]
+    NORMAL:["🌆 NORMAL", msg || "通常モードです。"],
+    ALERT:["⚠️ ALERT", msg || "警戒エリア発生！街に注意してください。"],
+    BOSS:["👹 BOSS出現！", msg || "新町にBOSS出現！討伐チャンス！"],
+    MISSION:["🎯 MISSION", msg || "本町集合ミッション開始！"],
+    LIVE:["🎵 LIVE開始！", msg || "オルタネーターズLIVE開始！"],
+    SAFE:["🛡 SAFE ZONE", msg || "お宿 Onn SAFE ZONE発動！"],
+    FINAL:["🔥 FINAL BATTLE", msg || "FINAL BATTLE開始！"],
+    END:["🏆 GAME END", msg || "ゲーム終了！集合してください！"],
+    RADIO:["📡 STREET RADIO", msg || "運営速報"]
   };
   return map[type] || ["📡 STREET SURVIVAL", msg || type];
 }
 
-async function sendLocalNotification(title, body){
+async function sendStreetSurvivalNotification(title, body){
   try{
     document.body.classList.remove("notify-flash");
     void document.body.offsetWidth;
@@ -559,37 +575,36 @@ async function sendLocalNotification(title, body){
 
     const options = {
       body,
-      icon: "./icon-192.png",
-      badge: "./icon-192.png",
-      tag: "street-survival-event",
-      renotify: true
+      icon:"./icon-192.png",
+      badge:"./icon-192.png",
+      tag:"street-survival-event",
+      renotify:true,
+      requireInteraction:false
     };
 
     if("serviceWorker" in navigator){
       const reg = await navigator.serviceWorker.getRegistration();
       if(reg && reg.showNotification){
-        reg.showNotification(title, options);
+        await reg.showNotification(title, options);
         return;
       }
     }
 
     new Notification(title, options);
   }catch(e){
-    console.error("Notification error", e);
+    console.error("notify error", e);
   }
 }
 
-function notifyForCommand(cmd){
-  const [title, body] = notifyTextForCommand(cmd);
-  sendLocalNotification(title, body);
+function notifyStreetSurvivalCommand(cmd){
+  const arr = streetSurvivalNotifyText(cmd);
+  sendStreetSurvivalNotification(arr[0], arr[1]);
 }
 
 window.addEventListener("load", ()=>{
   setTimeout(()=>{
-    initStreetSurvivalNotifications();
+    initStreetSurvivalPush();
     const btn = document.getElementById("notifyBtn");
-    if(btn){
-      btn.addEventListener("click", requestStreetSurvivalNotificationPermission);
-    }
+    if(btn) btn.addEventListener("click", requestStreetSurvivalPush);
   }, 500);
 });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β9.0</title>
+  <title>STREET SURVIVAL β9.1</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
   <link rel="manifest" href="manifest.webmanifest">
@@ -12,8 +12,8 @@
 <body>
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β9.0</h1>
-    <p>PLAYER MODE / Push Notify / 通知対応。</p>
+    <h1>STREET SURVIVAL β9.1</h1>
+    <p>PLAYER MODE / Ultimate Push / 通知対応。</p>
   </div>
   <button id="resetBtn" class="ghost">RESET</button>
 </header>
@@ -39,6 +39,11 @@
 </div>
 
 <main class="hud">
+  <section class="notify-panel" id="notifyPanel">
+    <button id="notifyBtn" class="notify-btn">🔔 通知を許可</button>
+    <span id="notifyStatus">通知: 未確認</span>
+  </section>
+
 
   <section id="statusPanel" class="status-panel runner-mode">
     <div class="player-row">
@@ -117,11 +122,6 @@
   </section>
 
   <div id="radioTicker" class="radio-ticker">📻 ゲーム開始 ｜ 👹 BOSS ｜ 🎯 本町集合 ｜ 🎵 LIVE SAFE</div>
-
-  <section class="notify-panel">
-    <button id="notifyBtn" class="notify-btn">🔔 通知を許可</button>
-    <span id="notifyStatus">通知: 未確認</span>
-  </section>
 
   <section class="action-row">
     <button id="gpsBtn" class="secondary">📍 GPS</button>

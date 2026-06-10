@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β1.1</title>
+  <title>STREET SURVIVAL β2.0</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-<header class="app-header">
+<header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β1.1</h1>
-    <p>3秒で状況が分かる、街RPGホーム。</p>
+    <h1>STREET SURVIVAL β2.0</h1>
+    <p>3秒で分かる、街RPG端末。</p>
   </div>
   <button id="resetBtn" class="ghost">リセット</button>
 </header>
@@ -22,58 +22,44 @@
   <span id="fullEventSub">HP吸収2倍・ポイント2倍</span>
 </div>
 
-<main class="home">
+<main class="app">
 
-  <section class="hero-card">
-    <div class="player-line">
+  <section id="statusPanel" class="status-panel runner-mode">
+    <div class="player-row">
       <input id="playerName" value="RED"/>
       <span id="roleBadge" class="badge runner">RUNNER</span>
     </div>
 
-    <div id="megaStatus" class="mega-status runner-mega">
-      <div class="mega-icon">🔵</div>
-      <div class="mega-title">RUNNER</div>
-      <div class="mega-sub">🏃 生存中</div>
-      <div class="mega-note">👀 気配なし</div>
+    <div id="statusIcon" class="status-icon">🔵</div>
+    <div id="statusTitle" class="status-title">RUNNER</div>
+    <div id="statusSub" class="status-sub">🏃 生存中</div>
+    <div id="statusNote" class="status-note">👀 気配なし</div>
+
+    <div class="info-grid">
+      <div><small>❤️ HP</small><b id="hpText">100/300</b></div>
+      <div><small>👥 人数</small><b id="totalPlayers">18</b></div>
+      <div><small>🔥 街</small><b id="cityModeMini">NORMAL</b></div>
+      <div><small>⏰ 残り</small><b id="eventTimer">6:00</b></div>
     </div>
 
-    <div id="safeBanner" class="safe-banner hidden">
-      <strong>🛡 SAFE</strong>
-      <span id="safePlace">お宿 Onn</span>
-      <em>❤️ HP CHARGE</em>
-      <div class="safe-shine"></div>
-    </div>
-  </section>
-
-  <section class="sticky-info">
-    <div><small>❤️ HP</small><b id="hpText">100/300</b></div>
-    <div><small>👥 人数</small><b id="totalPlayers">18</b></div>
-    <div><small>🔥 街</small><b id="cityModeMini">NORMAL</b></div>
-    <div><small>⏰ 残り</small><b id="eventTimer">6:00</b></div>
-  </section>
-
-  <section class="mini-bars">
-    <div class="hp-block">
-      <div class="bar"><div id="hpBar" class="bar-fill"></div></div>
+    <div class="hp-line">
+      <div id="hpBar" class="hp-fill"></div>
       <div id="chargeFloat" class="charge-float hidden">❤️ +2</div>
     </div>
-    <div id="radioTicker" class="radio-mini">📻 ゲーム開始準備中 ｜ 👹 ボス出現 ｜ 🎯 本町集合 ｜ 🎵 オルタLIVE ｜ 🛡 SAFE ｜ 🔥 FINAL</div>
   </section>
 
-  <section class="map-card">
+  <section class="map-section">
     <div class="map-head">
-      <h2>地図フィールド</h2>
-      <button id="mapModeBtn" class="mini">🎮 ゲーム地図</button>
+      <h2>🗺️ FIELD</h2>
+      <button id="mapModeBtn" class="mini">🗺 現実地図</button>
     </div>
 
-    <div id="realMap" class="map-panel"></div>
-
-    <div id="gameMap" class="game-map hidden">
+    <div id="gameMap" class="game-map">
       <div class="zone-label zone-onn">🎵 Onn<br><small>SAFE</small></div>
       <div class="zone-label zone-honmachi">🟡 本町</div>
       <div class="zone-label zone-shinmachi">🔴 新町</div>
 
-      <div id="playerIcon" class="map-icon player">🔵</div>
+      <div id="playerIcon" class="map-icon player">🔵<span>YOU</span></div>
       <div class="map-icon spot coffee">☕<span>HP</span></div>
       <div class="map-icon spot ramen">🍜<span>HP</span></div>
       <div class="map-icon spot onn">🎵<span>LIVE</span></div>
@@ -86,7 +72,9 @@
       <div class="street-line line-c"></div>
     </div>
 
-    <div class="controls">
+    <div id="realMap" class="real-map hidden"></div>
+
+    <div class="move-controls">
       <button data-move="up">↑</button>
       <button data-move="left">←</button>
       <button data-move="down">↓</button>
@@ -94,38 +82,40 @@
     </div>
   </section>
 
-  <section class="quick-actions">
+  <section class="action-row">
     <button id="gpsBtn" class="secondary">📍 GPS</button>
     <button id="roleBtn" class="primary">🟢 HUNTER</button>
     <button id="vibeBtn" class="secondary">📳 TEST</button>
   </section>
 
-  <section class="status-row">
+  <div id="radioTicker" class="radio-ticker">📻 ゲーム開始準備中 ｜ 👹 ボス出現 ｜ 🎯 本町集合 ｜ 🎵 オルタLIVE ｜ 🛡 SAFE ｜ 🔥 FINAL</div>
+
+  <section class="mini-status">
     <div><small>POINT</small><b id="points">0</b></div>
-    <div><small>HUNTER残り</small><b id="hunterTimer">-</b></div>
+    <div><small>HUNTER</small><b id="hunterTimer">-</b></div>
     <div><small>ZONE</small><b id="zoneState">FIELD</b></div>
   </section>
 
   <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
   <p id="battleStatus" class="notice">現在：通常エリア</p>
-  <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで開いて位置情報を許可してください。</p>
+  <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで位置情報を許可してください。</p>
 
   <details class="admin-panel">
-    <summary>📻 運営モードを開く</summary>
+    <summary>📻 運営モード</summary>
     <div class="admin-buttons">
       <button id="normalBtn">🌆 NORMAL</button>
       <button id="alertBtn">⚠ ALERT</button>
-      <button id="bossBtn">👹 ボス出現</button>
-      <button id="missionBtn">🎯 本町集合</button>
-      <button id="liveBtn">🎵 オルタLIVE</button>
-      <button id="safeBtn">🛡 SAFE発動</button>
+      <button id="bossBtn">👹 BOSS</button>
+      <button id="missionBtn">🎯 MISSION</button>
+      <button id="liveBtn">🎵 LIVE</button>
+      <button id="safeBtn">🛡 SAFE</button>
       <button id="finalBtn">🔥 FINAL</button>
       <button id="endBtn">🏆 END</button>
     </div>
   </details>
 
   <details class="sub-panel">
-    <summary>🌆 街ステータス</summary>
+    <summary>🌆 街ステータス / ログ</summary>
     <div class="player-counts">
       <strong id="totalPlayersFull">18人参加中</strong>
       <div class="count-row"><span>🟢 HUNTER</span><b id="hunterCount">5</b></div>
@@ -134,15 +124,6 @@
       <div class="count-row"><span>🎯 MISSION</span><b id="missionCount">0</b></div>
       <div class="count-row"><span>🛡 SAFE</span><b id="safeCount">4</b></div>
     </div>
-  </details>
-
-  <details class="sub-panel">
-    <summary>❤️ HP CHARGE ZONE</summary>
-    <div id="shops" class="shop-list"></div>
-  </details>
-
-  <details class="sub-panel">
-    <summary>📋 ゲーム情報 / ログ</summary>
     <div id="players" class="player-list"></div>
     <div id="log" class="log"></div>
   </details>

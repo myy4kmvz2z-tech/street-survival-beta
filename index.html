@@ -3,23 +3,29 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β0.8</title>
+  <title>STREET SURVIVAL β0.9</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="app-header">
   <div>
-    <h1>STREET SURVIVAL β0.8</h1>
-    <p>中津川の街を、一日だけRPGに。</p>
+    <h1>STREET SURVIVAL β0.9</h1>
+    <p>運営が街を動かす。中津川リアルRPG。</p>
   </div>
   <button id="resetBtn" class="ghost">リセット</button>
 </header>
 
 <main class="layout">
   <section class="card wide radio-card">
+    <div id="cityMode" class="city-mode normal-mode">
+      <small>🔥 現在の街の状況</small>
+      <strong id="cityModeText">NORMAL</strong>
+      <span id="cityModeSub">街は通常状態です</span>
+    </div>
+
     <div class="ticker-wrap">
-      <div id="radioTicker" class="ticker">📻 STREET SURVIVAL RADIO　｜　本町・新町・お宿 Onn周辺、ゲーム開始準備中。　｜　👹 レイドボス出現！　｜　🎯 本町ミッション開始！　｜　🎵 LIVE SAFE発動！</div>
+      <div id="radioTicker" class="ticker">📻 STREET SURVIVAL RADIO　｜　ゲーム開始準備中　｜　👹 ボス出現　｜　🎯 ミッション開始　｜　🎵 オルタLIVE　｜　🛡 SAFE発動</div>
     </div>
 
     <div class="top-grid">
@@ -87,10 +93,18 @@
     <button id="roleBtn" class="primary">🟢 ハンターにする</button>
     <button id="vibeBtn" class="secondary">📳 バイブテスト</button>
 
-    <div class="admin-buttons">
-      <button id="bossBtn">👹 ボス出現</button>
-      <button id="missionBtn">🎯 ミッション発令</button>
-      <button id="liveBtn">🎵 LIVE速報</button>
+    <div class="admin-panel">
+      <h3>📻 運営モード</h3>
+      <div class="admin-buttons">
+        <button id="normalBtn">🌆 NORMAL</button>
+        <button id="alertBtn">⚠ ALERT</button>
+        <button id="bossBtn">👹 ボス出現</button>
+        <button id="missionBtn">🎯 本町集合</button>
+        <button id="liveBtn">🎵 オルタLIVE</button>
+        <button id="safeBtn">🛡 SAFE発動</button>
+        <button id="finalBtn">🔥 FINAL BATTLE</button>
+        <button id="endBtn">🏆 GAME END</button>
+      </div>
     </div>
 
     <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで開いて位置情報を許可してください。</p>

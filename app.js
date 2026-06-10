@@ -17,11 +17,13 @@ const CONFIG = {
 
 const state = {
   eventStartAt: Date.now(),
+  cityMode: "NORMAL",
   participantCount: 18,
   simulatedHunters: 5,
   simulatedSafe: 4,
   bossActive: false,
   missionActive: false,
+  liveActive: false,
   mapMode: "real",
   me: { id: "me", name: "RED", hp: 100, points: 0, role: "runner", lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng, hunterEndsAt: null, invincibleUntil: 0, zone: "FIELD" },
   npcs: [
@@ -49,8 +51,26 @@ function addLog(text) {
 }
 
 function setRadio(text) {
-  $("radioTicker").textContent = `📻 STREET SURVIVAL RADIO　｜　${text}　｜　👹 レイドボス出現！　｜　🎯 本町ミッション開始！　｜　🎵 LIVE SAFE発動！`;
+  $("radioTicker").textContent = `📻 ${text}　｜　👹 ボス出現　｜　🎯 ミッション開始　｜　🎵 オルタLIVE　｜　🛡 SAFE発動　｜　🔥 FINAL BATTLE`;
   addLog("📻 " + text);
+}
+
+function setCityMode(mode, sub) {
+  state.cityMode = mode;
+  $("cityModeText").textContent = mode;
+  $("cityModeSub").textContent = sub;
+  const el = $("cityMode");
+  el.className = "city-mode";
+  document.body.classList.remove("final-battle");
+  if (mode === "NORMAL") el.classList.add("normal-mode");
+  if (mode === "ALERT") el.classList.add("alert-mode");
+  if (mode === "BOSS EVENT") el.classList.add("boss-mode");
+  if (mode === "LIVE TIME") el.classList.add("live-mode");
+  if (mode === "FINAL BATTLE") {
+    el.classList.add("final-mode");
+    document.body.classList.add("final-battle");
+  }
+  if (mode === "GAME END") el.classList.add("end-mode");
 }
 
 function meters(a, b) {
@@ -213,8 +233,8 @@ function isInvincible() { return Date.now() < state.me.invincibleUntil; }
 
 function showSafeBanner(zone) {
   const b = $("safeBanner");
-  if (zone) {
-    $("safePlace").textContent = zone.name;
+  if (zone || state.liveActive) {
+    $("safePlace").textContent = zone ? zone.name : "お宿 Onn";
     b.classList.remove("hidden");
   } else {
     b.classList.add("hidden");
@@ -224,6 +244,7 @@ function showSafeBanner(zone) {
 function updateAlert(nearest, distance, zone) {
   const box = $("alertStatus");
   document.body.classList.remove("danger-flash");
+  if (state.cityMode === "FINAL BATTLE") document.body.classList.add("final-battle");
   box.className = "alert-box";
   let level = "none";
 
@@ -350,15 +371,16 @@ function gameTick() {
   if (!isInvincible() && nearest && d <= CONFIG.battleRangeM) {
     if (now - state.lastDrainAt >= 1000) {
       state.lastDrainAt = now;
+      const drain = state.cityMode === "FINAL BATTLE" ? CONFIG.drainPerSec * 2 : CONFIG.drainPerSec;
       if (state.me.role === "hunter") {
-        nearest.hp = clamp(nearest.hp - CONFIG.drainPerSec, CONFIG.minHp, CONFIG.maxHp);
-        state.me.hp = clamp(state.me.hp + CONFIG.drainPerSec, CONFIG.minHp, CONFIG.maxHp);
-        state.me.points += 1;
+        nearest.hp = clamp(nearest.hp - drain, CONFIG.minHp, CONFIG.maxHp);
+        state.me.hp = clamp(state.me.hp + drain, CONFIG.minHp, CONFIG.maxHp);
+        state.me.points += drain;
         $("battleStatus").textContent = `⚔ ${nearest.name}からHP吸収中！距離 ${d.toFixed(1)}m`;
         if (nearest.hp <= 0) swapRolesWith(nearest);
       } else {
-        state.me.hp = clamp(state.me.hp - CONFIG.drainPerSec, CONFIG.minHp, CONFIG.maxHp);
-        nearest.hp = clamp(nearest.hp + CONFIG.drainPerSec, CONFIG.minHp, CONFIG.maxHp);
+        state.me.hp = clamp(state.me.hp - drain, CONFIG.minHp, CONFIG.maxHp);
+        nearest.hp = clamp(nearest.hp + drain, CONFIG.minHp, CONFIG.maxHp);
         $("battleStatus").textContent = `⚠ ${nearest.name}にHPを吸収されています！距離 ${d.toFixed(1)}m`;
         if (state.me.hp <= 0) swapRolesWith(nearest);
       }
@@ -399,7 +421,7 @@ function renderStreetLevel() {
 function renderPlayerCounts() {
   const hunter = state.simulatedHunters + (state.me.role === "hunter" ? 1 : 0);
   const boss = state.bossActive ? 1 : 0;
-  const mission = state.missionActive ? 2 : 0;
+  const mission = state.missionActive ? 1 : 0;
   const runner = Math.max(0, state.participantCount - hunter);
   $("totalPlayers").textContent = `${state.participantCount}人参加中`;
   $("hunterCount").textContent = hunter;
@@ -445,7 +467,7 @@ function renderShops() {
 function renderPlayers() {
   const rows = [
     `<div class="item"><strong>${state.me.role === "hunter" ? "🟢" : "🔵"} ${state.me.name}（あなた）</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}${isInvincible() ? " / 無敵中" : ""}</small></div>`,
-    `<div class="item"><strong>β0.8</strong><small>大型ステータス・ラジオテロップ・人数表示・派手SAFEを追加。</small></div>`
+    `<div class="item"><strong>β0.9</strong><small>運営モード・街状況・FINAL BATTLE・GAME ENDを追加。</small></div>`
   ].concat(state.npcs.map(p => `<div class="item"><strong>${p.role === "hunter" ? "🟢" : "🔵"} ${p.name}</strong><small>HP ${Math.round(p.hp)} / ${CONFIG.maxHp}</small><br><small>距離 ${Math.round(meters(state.me, p))}m</small></div>`));
   $("players").innerHTML = rows.join("");
 }
@@ -472,9 +494,11 @@ function reset() {
   state.me.lng = DEFAULT_CENTER.lng;
   state.bossActive = false;
   state.missionActive = false;
+  state.liveActive = false;
   state.log = [];
   state.lastVibeAt = 0;
-  setRadio("本町・新町・お宿 Onn周辺、ゲーム開始準備中。");
+  setCityMode("NORMAL", "街は通常状態です");
+  setRadio("ゲーム開始準備中");
   updateMePosition(state.me.lat, state.me.lng, 10, true);
   addLog("ゲームをリセットしました");
 }
@@ -487,13 +511,28 @@ function toggleMapMode() {
   if (state.mapMode === "real" && state.map) setTimeout(() => state.map.invalidateSize(), 150);
 }
 
+function normalMode() {
+  state.bossActive = false;
+  state.missionActive = false;
+  state.liveActive = false;
+  setCityMode("NORMAL", "街は通常状態です");
+  setRadio("通常モード。街を歩き、気配を読め。");
+}
+
+function alertMode() {
+  setCityMode("ALERT", "本町・新町エリア警戒中");
+  setRadio("警戒情報。本町・新町エリアに動きあり。");
+}
+
 function triggerBoss() {
   state.bossActive = !state.bossActive;
   if (state.bossActive) {
-    setRadio("緊急速報！新町エリアにレイドボス出現！");
+    setCityMode("BOSS EVENT", "新町にレイドボス出現！");
+    setRadio("👹 レイドボス出現！新町エリア警戒！");
     updateHero("boss-hero", "👹 BOSS ACTIVE", "新町に出現！", "全員警戒");
     vibrate([200,80,200,80,300]);
   } else {
+    setCityMode("NORMAL", "ボスイベント終了");
     setRadio("レイドボスイベント終了。街は通常状態へ。");
   }
   render();
@@ -502,7 +541,8 @@ function triggerBoss() {
 function triggerMission() {
   state.missionActive = !state.missionActive;
   if (state.missionActive) {
-    setRadio("街ミッション発令！5分以内に本町エリアへ向かえ！");
+    setCityMode("ALERT", "本町ミッション発令中");
+    setRadio("🎯 本町集合ミッション開始！");
     updateHero("mission-hero", "🎯 MISSION", "本町へ向かえ！", "報酬あり");
     vibrate([120,80,120]);
   } else {
@@ -512,9 +552,41 @@ function triggerMission() {
 }
 
 function triggerLive() {
-  setRadio("お宿 Onn前、LIVE SAFE発動！ライブを楽しめ！");
+  state.liveActive = true;
+  setCityMode("LIVE TIME", "お宿 Onn前 LIVE SAFE");
+  setRadio("🎵 オルタネーターズLIVE！お宿 Onn前 SAFE発動！");
   updateHero("safe-hero", "🎵 LIVE SAFE", "お宿 Onn前", "戦闘停止 / HP CHARGE");
   vibrate([100,60,100,60,100]);
+  render();
+}
+
+function triggerSafe() {
+  state.liveActive = true;
+  setCityMode("LIVE TIME", "SAFE ZONE拡大中");
+  setRadio("🛡 SAFE発動！お宿 Onn周辺は戦闘停止。");
+  updateHero("safe-hero", "🛡 SAFE", "お宿 Onn", "❤️ HP CHARGE");
+  render();
+}
+
+function triggerFinal() {
+  state.bossActive = true;
+  state.missionActive = true;
+  setCityMode("FINAL BATTLE", "全HP吸収2倍・ボス出現・ポイント2倍！");
+  setRadio("🔥 FINAL BATTLE！全HP吸収2倍！ボス出現！ポイント2倍！");
+  updateHero("battle-hero", "🔥 FINAL BATTLE", "最後の街読み", "全員集合！");
+  vibrate([250,80,250,80,400]);
+  render();
+}
+
+function triggerEnd() {
+  state.bossActive = false;
+  state.missionActive = false;
+  state.liveActive = false;
+  setCityMode("GAME END", "STREET SURVIVAL終了！");
+  setRadio("🏆 GAME END！お疲れさまでした。お宿 Onn前へ集合！");
+  updateHero("mission-hero", "🏆 GAME END", "お疲れさまでした", "お宿 Onn前へ");
+  vibrate([120,80,120,80,300]);
+  render();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -532,11 +604,17 @@ document.addEventListener("DOMContentLoaded", () => {
   $("roleBtn").addEventListener("click", () => setRole(state.me.role === "hunter" ? "runner" : "hunter"));
   $("vibeBtn").addEventListener("click", () => { vibrate([120, 80, 120]); addLog("📳 バイブテスト"); });
   $("mapModeBtn").addEventListener("click", toggleMapMode);
+
+  $("normalBtn").addEventListener("click", normalMode);
+  $("alertBtn").addEventListener("click", alertMode);
   $("bossBtn").addEventListener("click", triggerBoss);
   $("missionBtn").addEventListener("click", triggerMission);
   $("liveBtn").addEventListener("click", triggerLive);
+  $("safeBtn").addEventListener("click", triggerSafe);
+  $("finalBtn").addEventListener("click", triggerFinal);
+  $("endBtn").addEventListener("click", triggerEnd);
 
-  addLog("STREET SURVIVAL β0.8 起動");
+  addLog("STREET SURVIVAL β0.9 起動");
   render();
   setInterval(gameTick, 1000);
   setInterval(render, 1000);

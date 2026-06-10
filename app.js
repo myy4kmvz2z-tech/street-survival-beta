@@ -75,23 +75,43 @@ function showEffect(kind="notice", icon="⚡", text="EFFECT", withSound=true){
     $("effectIcon").textContent = icon;
     $("effectText").textContent = text;
     overlay.className = `effect-overlay ${kind}-fx`;
-    setTimeout(()=>overlay.classList.add("hidden"), 920);
+    overlay.classList.remove("hidden");
+    setTimeout(()=>overlay.classList.add("hidden"), 1800);
   }
+
+  const toast = $("fxToast");
+  if(toast){
+    toast.textContent = `${icon} ${text}`;
+    toast.classList.remove("hidden");
+    toast.style.animation = "none";
+    void toast.offsetWidth;
+    toast.style.animation = "";
+    setTimeout(()=>toast.classList.add("hidden"), 1800);
+  }
+
+  document.body.classList.remove("fx-test-shake");
+  void document.body.offsetWidth;
+  document.body.classList.add("fx-test-shake");
+  setTimeout(()=>document.body.classList.remove("fx-test-shake"), 1200);
+
   flashBody(kind);
+
   const radar = $("radar");
   if(radar){
     radar.classList.remove("sound-wave");
     void radar.offsetWidth;
     radar.classList.add("sound-wave");
-    setTimeout(()=>radar.classList.remove("sound-wave"), 1000);
+    setTimeout(()=>radar.classList.remove("sound-wave"), 1200);
   }
+
   const panel = $("statusPanel");
   if(panel){
     panel.classList.remove("ping");
     void panel.offsetWidth;
     panel.classList.add("ping");
-    setTimeout(()=>panel.classList.remove("ping"), 800);
+    setTimeout(()=>panel.classList.remove("ping"), 1200);
   }
+
   if(withSound) playTone(kind);
 }
 
@@ -123,7 +143,7 @@ function gameTick(){const now=Date.now();hunterTimeout();state.npcs.forEach(p=>{
 function formatTime(sec){sec=Math.max(0,Math.floor(sec));const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;return h>0?`${h}:${String(m).padStart(2,"0")}`:`${m}:${String(s).padStart(2,"0")}`;}
 function renderPlayerCounts(){const hunter=state.simulatedHunters+(state.me.role==="hunter"?1:0),boss=state.bossActive?1:0,mission=state.missionActive?1:0,runner=Math.max(0,state.participantCount-hunter);$("totalPlayers").textContent=`${state.participantCount}`;$("totalPlayersFull").textContent=`${state.participantCount}人参加中`;$("hunterCount").textContent=hunter;$("runnerCount").textContent=runner;$("bossCount").textContent=boss;$("missionCount").textContent=mission;$("safeCount").textContent=state.simulatedSafe+(state.me.zone!=="FIELD"?1:0);}
 function render(){if(!$("hpText"))return;state.me.name=$("playerName")?.value||"RED";$("hpText").textContent=`${Math.round(state.me.hp)}/${CONFIG.maxHp}`;$("hpBar").style.width=`${(state.me.hp/CONFIG.maxHp)*100}%`;$("points").textContent=Math.round(state.me.points);$("hunterTimer").textContent=(state.me.role==="hunter"&&state.me.hunterEndsAt)?Math.max(0,Math.ceil((state.me.hunterEndsAt-Date.now())/1000)):"-";$("zoneState").textContent=state.me.zone==="FIELD"?"FIELD":"SAFE";$("cityModeMini").textContent=state.cityMode;const elapsed=(Date.now()-state.eventStartAt)/1000;$("eventTimer").textContent=formatTime(CONFIG.eventDurationSec-elapsed);const badge=$("roleBadge");badge.textContent=state.me.role==="hunter"?"HUNTER":"RUNNER";badge.className=`badge ${state.me.role==="hunter"?"hunter":"runner"} ${isInvincible()?"invincible":""}`;$("roleBtn").textContent=state.me.role==="hunter"?"🔵 ACTION":"🟢 ACTION";renderPlayerCounts();renderPlayers();$("log").innerHTML=state.log.map(line=>`<div>${line}</div>`).join("");}
-function renderPlayers(){const rows=[`<div class="item"><strong>${state.me.role==="hunter"?"🟢":"🔵"} ${state.me.name}</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}${isInvincible()?" / 無敵中":""}</small></div>`,`<div class="item"><strong>β6.0 Effects HUD</strong><small>バイブなしでも、光・音・動きで伝える。</small></div>`].concat(state.npcs.map(p=>`<div class="item"><strong>${p.role==="hunter"?"🟢":"🔵"} ${p.name}</strong><small>HP ${Math.round(p.hp)} / ${CONFIG.maxHp}</small><br><small>距離 ${Math.round(meters(state.me,p))}m</small></div>`));$("players").innerHTML=rows.join("");}
+function renderPlayers(){const rows=[`<div class="item"><strong>${state.me.role==="hunter"?"🟢":"🔵"} ${state.me.name}</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}${isInvincible()?" / 無敵中":""}</small></div>`,`<div class="item"><strong>β6.1 Effects HUD</strong><small>FXボタン修正。光・音・揺れが必ず出る。</small></div>`].concat(state.npcs.map(p=>`<div class="item"><strong>${p.role==="hunter"?"🟢":"🔵"} ${p.name}</strong><small>HP ${Math.round(p.hp)} / ${CONFIG.maxHp}</small><br><small>距離 ${Math.round(meters(state.me,p))}m</small></div>`));$("players").innerHTML=rows.join("");}
 function move(direction){const step=.00018;let lat=state.me.lat,lng=state.me.lng;if(direction==="up")lat+=step;if(direction==="down")lat-=step;if(direction==="left")lng-=step;if(direction==="right")lng+=step;updateMePosition(lat,lng,10,true);addLog(`テスト移動：${direction}`);}
 function reset(){state.eventStartAt=Date.now();state.me.hp=CONFIG.initialHp;state.me.points=0;state.me.role="runner";state.me.hunterEndsAt=null;state.me.invincibleUntil=0;state.me.lat=DEFAULT_CENTER.lat;state.me.lng=DEFAULT_CENTER.lng;state.bossActive=false;state.missionActive=false;state.liveActive=false;state.log=[];state.lastVibeAt=0;setCityMode("NORMAL");setRadio("ゲーム開始");updateMePosition(state.me.lat,state.me.lng,10,true);addLog("RESET");}
 function cycleViewMode(){const modes=["radar","game","real"];state.viewMode=modes[(modes.indexOf(state.viewMode)+1)%modes.length];$("radar").classList.toggle("hidden",state.viewMode!=="radar");$("gameMap").classList.toggle("hidden",state.viewMode!=="game");$("realMap").classList.toggle("hidden",state.viewMode!=="real");$("modeTitle").textContent=state.viewMode==="radar"?"🛰 RADAR":state.viewMode==="game"?"🗺 GAME MAP":"🗺 REAL MAP";$("mapModeBtn").textContent=state.viewMode==="radar"?"🗺 MAP":state.viewMode==="game"?"🌍 REAL":"🛰 RADAR";if(state.viewMode==="real"&&state.map)setTimeout(()=>state.map.invalidateSize(),150);}
@@ -135,4 +155,4 @@ function triggerLive(){state.liveActive=true;setCityMode("LIVE");setRadio("🎵 
 function triggerSafe(){state.liveActive=true;setCityMode("SAFE");setRadio("🛡 SAFE発動");updateStatus("safe-mode","🛡","SAFE","お宿 Onn","❤️ HP CHARGE");showFullEvent("🛡","SAFE","HP CHARGE","");showEffect("safe","🛡","SAFE");render();}
 function triggerFinal(){state.bossActive=true;state.missionActive=true;setCityMode("FINAL");setRadio("🔥 FINAL BATTLE");updateStatus("final-mode","🔥","FINAL","BATTLE","HP吸収2倍 / POINT2倍");showFullEvent("🔥","FINAL BATTLE","HP吸収2倍・POINT2倍","final");showEffect("final","🔥","FINAL BATTLE");vibrate([250,80,250,80,400]);render();}
 function triggerEnd(){state.bossActive=false;state.missionActive=false;state.liveActive=false;setCityMode("END");setRadio("🏆 GAME END");updateStatus("boss-mode","🏆","GAME END","お疲れさまでした","お宿 Onn前へ");showFullEvent("🏆","GAME END","お疲れさまでした","");showEffect("mission","🏆","GAME END");vibrate([120,80,120,80,300]);render();}
-document.addEventListener("DOMContentLoaded",()=>{initMap();document.querySelectorAll("[data-move]").forEach(btn=>btn.addEventListener("click",()=>move(btn.dataset.move)));window.addEventListener("keydown",e=>{if(e.key==="ArrowUp")move("up");if(e.key==="ArrowDown")move("down");if(e.key==="ArrowLeft")move("left");if(e.key==="ArrowRight")move("right");});$("gpsBtn").addEventListener("click",startGps);$("resetBtn").addEventListener("click",reset);$("roleBtn").addEventListener("click",()=>setRole(state.me.role==="hunter"?"runner":"hunter"));$("menuBtn").addEventListener("click",()=>{$("menuPanel").open=!$("menuPanel").open;});$("effectBtn").addEventListener("click",()=>{showEffect("notice","🔊","FX TEST");addLog("🔊 FX TEST");});$("vibeBtn").addEventListener("click",()=>{showEffect("notice","🔊","FX TEST");vibrate([120,80,120]);addLog("🔊 FX TEST");});$("mapModeBtn").addEventListener("click",cycleViewMode);$("normalBtn").addEventListener("click",normalMode);$("alertBtn").addEventListener("click",alertMode);$("bossBtn").addEventListener("click",triggerBoss);$("missionBtn").addEventListener("click",triggerMission);$("liveBtn").addEventListener("click",triggerLive);$("safeBtn").addEventListener("click",triggerSafe);$("finalBtn").addEventListener("click",triggerFinal);$("endBtn").addEventListener("click",triggerEnd);addLog("STREET SURVIVAL β5.0 起動");render();setInterval(gameTick,1000);setInterval(render,1000);});
+document.addEventListener("DOMContentLoaded",()=>{initMap();document.querySelectorAll("[data-move]").forEach(btn=>btn.addEventListener("click",()=>move(btn.dataset.move)));window.addEventListener("keydown",e=>{if(e.key==="ArrowUp")move("up");if(e.key==="ArrowDown")move("down");if(e.key==="ArrowLeft")move("left");if(e.key==="ArrowRight")move("right");});$("gpsBtn").addEventListener("click",startGps);$("resetBtn").addEventListener("click",reset);$("roleBtn").addEventListener("click",()=>setRole(state.me.role==="hunter"?"runner":"hunter"));$("menuBtn").addEventListener("click",()=>{$("menuPanel").open=!$("menuPanel").open;});if($("effectBtn")) $("effectBtn").addEventListener("click",()=>{showEffect("notice","🔊","FX TEST");addLog("🔊 FX TEST");});$("vibeBtn").addEventListener("click",()=>{showEffect("notice","🔊","FX TEST");vibrate([120,80,120]);addLog("🔊 FX TEST");});$("mapModeBtn").addEventListener("click",cycleViewMode);$("normalBtn").addEventListener("click",normalMode);$("alertBtn").addEventListener("click",alertMode);$("bossBtn").addEventListener("click",triggerBoss);$("missionBtn").addEventListener("click",triggerMission);$("liveBtn").addEventListener("click",triggerLive);$("safeBtn").addEventListener("click",triggerSafe);$("finalBtn").addEventListener("click",triggerFinal);$("endBtn").addEventListener("click",triggerEnd);addLog("STREET SURVIVAL β5.0 起動");render();setInterval(gameTick,1000);setInterval(render,1000);});

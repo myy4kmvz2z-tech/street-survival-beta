@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β6.0</title>
+  <title>STREET SURVIVAL β6.1</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β6.0</h1>
-    <p>Effects HUD / 光る・揺れる・鳴る。</p>
+    <h1>STREET SURVIVAL β6.1</h1>
+    <p>Effects HUD 修正版 / FXが必ず見える。</p>
   </div>
   <button id="resetBtn" class="ghost">RESET</button>
 </header>
@@ -26,6 +26,8 @@
   <div id="effectIcon">⚡</div>
   <strong id="effectText">EFFECT</strong>
 </div>
+
+<div id="fxToast" class="fx-toast hidden">🔊 FX TEST</div>
 
 <main class="hud">
 
@@ -110,7 +112,7 @@
   <section class="action-row">
     <button id="gpsBtn" class="secondary">📍 GPS</button>
     <button id="roleBtn" class="primary">🟢 ACTION</button>
-    <button id="effectBtn" class="secondary">🔊 FX</button>
+    <button id="effectBtn" class="secondary" onclick="showEffect('notice','🔊','FX TEST');">🔊 FX</button>
     <button id="menuBtn" class="secondary">⚙ MENU</button>
   </section>
 

@@ -81,3 +81,45 @@ body.flash-mission::before{background:rgba(247,201,72,.30)}
 @media(max-width:640px){
   .action-row button{padding:12px 6px;font-size:13px}
 }
+
+
+/* β6.1 FX visible fix */
+.effect-overlay{
+  background:rgba(0,0,0,.55) !important;
+  animation:fxFadeLong 1.8s ease-out forwards !important;
+}
+.effect-overlay div{font-size:104px !important}
+.effect-overlay strong{
+  font-size:36px !important;
+  color:#fff !important;
+  text-shadow:0 0 24px rgba(255,255,255,.85),0 0 40px rgba(247,201,72,.7) !important;
+}
+.effect-overlay.notice-fx{background:radial-gradient(circle,rgba(247,201,72,.55),rgba(0,0,0,.55) 68%) !important}
+@keyframes fxFadeLong{
+  0%{opacity:0;transform:scale(.9)}
+  12%{opacity:1;transform:scale(1)}
+  78%{opacity:1;transform:scale(1.02)}
+  100%{opacity:0;transform:scale(1.08)}
+}
+.fx-toast{
+  position:fixed;
+  left:50%;
+  bottom:92px;
+  transform:translateX(-50%);
+  z-index:10000;
+  background:rgba(247,201,72,.96);
+  color:#111;
+  border-radius:999px;
+  padding:14px 22px;
+  font-weight:1000;
+  box-shadow:0 8px 28px rgba(0,0,0,.45);
+  animation:toastPop 1.8s ease-out forwards;
+}
+@keyframes toastPop{
+  0%{opacity:0;transform:translateX(-50%) translateY(18px) scale(.94)}
+  14%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+  78%{opacity:1}
+  100%{opacity:0;transform:translateX(-50%) translateY(-18px) scale(1.05)}
+}
+body.fx-test-shake{animation:fxScreenShake .12s alternate 8}
+@keyframes fxScreenShake{from{transform:translateX(-3px)}to{transform:translateX(3px)}}

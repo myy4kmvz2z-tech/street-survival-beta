@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β1.0</title>
+  <title>STREET SURVIVAL β1.1</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="app-header">
   <div>
-    <h1>STREET SURVIVAL β1.0</h1>
-    <p>第一段階。スマホが街RPGの端末になる。</p>
+    <h1>STREET SURVIVAL β1.1</h1>
+    <p>3秒で状況が分かる、街RPGホーム。</p>
   </div>
   <button id="resetBtn" class="ghost">リセット</button>
 </header>
@@ -22,49 +22,11 @@
   <span id="fullEventSub">HP吸収2倍・ポイント2倍</span>
 </div>
 
-<main class="layout">
-  <section class="card wide radio-card">
-    <div id="cityMode" class="city-mode normal-mode">
-      <small>🔥 現在の街の状況</small>
-      <strong id="cityModeText">NORMAL</strong>
-      <span id="cityModeSub">街は通常状態です</span>
-    </div>
+<main class="home">
 
-    <div class="ticker-wrap">
-      <div id="radioTicker" class="ticker">📻 ゲーム開始準備中　｜　👹 ボス出現　｜　🎯 ミッション開始　｜　🎵 オルタLIVE　｜　🛡 SAFE発動　｜　🔥 FINAL BATTLE</div>
-    </div>
-
-    <div class="top-grid">
-      <div class="event-clock">
-        <small>⏰ EVENT TIME</small>
-        <strong id="eventTimer">6:00:00</strong>
-      </div>
-
-      <div class="street-level">
-        <small>🌆 STREET LEVEL</small>
-        <strong id="streetLevel">★☆☆☆☆</strong>
-        <div id="streetLevelCount" class="level-count">18/20</div>
-        <span id="streetLevelText">あと2人！</span>
-      </div>
-
-      <div class="player-counts">
-        <small>👥 PLAYER STATUS</small>
-        <strong id="totalPlayers">18人参加中</strong>
-        <div class="count-row"><span>🟢 HUNTER</span><b id="hunterCount">5</b></div>
-        <div class="count-row"><span>🔵 RUNNER</span><b id="runnerCount">13</b></div>
-        <div class="count-row"><span>👹 BOSS</span><b id="bossCount">0</b></div>
-        <div class="count-row"><span>🎯 MISSION</span><b id="missionCount">0</b></div>
-        <div class="count-row"><span>🛡 SAFE</span><b id="safeCount">4</b></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="card player-card">
-    <div class="row between">
-      <div>
-        <h2>あなた</h2>
-        <p class="muted">プレイヤー名：<input id="playerName" value="RED"/></p>
-      </div>
+  <section class="hero-card">
+    <div class="player-line">
+      <input id="playerName" value="RED"/>
       <span id="roleBadge" class="badge runner">RUNNER</span>
     </div>
 
@@ -81,47 +43,25 @@
       <em>❤️ HP CHARGE</em>
       <div class="safe-shine"></div>
     </div>
+  </section>
 
+  <section class="sticky-info">
+    <div><small>❤️ HP</small><b id="hpText">100/300</b></div>
+    <div><small>👥 人数</small><b id="totalPlayers">18</b></div>
+    <div><small>🔥 街</small><b id="cityModeMini">NORMAL</b></div>
+    <div><small>⏰ 残り</small><b id="eventTimer">6:00</b></div>
+  </section>
+
+  <section class="mini-bars">
     <div class="hp-block">
-      <div class="row between">
-        <strong>HP</strong>
-        <span id="hpText">100 / 300</span>
-      </div>
       <div class="bar"><div id="hpBar" class="bar-fill"></div></div>
       <div id="chargeFloat" class="charge-float hidden">❤️ +2</div>
     </div>
-
-    <div class="stats">
-      <div><span id="points">0</span><small>POINT</small></div>
-      <div><span id="hunterTimer">-</span><small>HUNTER残り</small></div>
-      <div><span id="zoneState">FIELD</span><small>ZONE</small></div>
-    </div>
-
-    <button id="gpsBtn" class="secondary">📍 GPS現在地を取得</button>
-    <button id="roleBtn" class="primary">🟢 ハンターにする</button>
-    <button id="vibeBtn" class="secondary">📳 バイブテスト</button>
-
-    <div class="admin-panel">
-      <h3>📻 運営モード</h3>
-      <div class="admin-buttons">
-        <button id="normalBtn">🌆 NORMAL</button>
-        <button id="alertBtn">⚠ ALERT</button>
-        <button id="bossBtn">👹 ボス出現</button>
-        <button id="missionBtn">🎯 本町集合</button>
-        <button id="liveBtn">🎵 オルタLIVE</button>
-        <button id="safeBtn">🛡 SAFE発動</button>
-        <button id="finalBtn">🔥 FINAL BATTLE</button>
-        <button id="endBtn">🏆 GAME END</button>
-      </div>
-    </div>
-
-    <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで開いて位置情報を許可してください。</p>
-    <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
-    <p id="battleStatus" class="notice">現在：通常エリア</p>
+    <div id="radioTicker" class="radio-mini">📻 ゲーム開始準備中 ｜ 👹 ボス出現 ｜ 🎯 本町集合 ｜ 🎵 オルタLIVE ｜ 🛡 SAFE ｜ 🔥 FINAL</div>
   </section>
 
-  <section class="card map-card">
-    <div class="row between">
+  <section class="map-card">
+    <div class="map-head">
       <h2>地図フィールド</h2>
       <button id="mapModeBtn" class="mini">🎮 ゲーム地図</button>
     </div>
@@ -129,9 +69,9 @@
     <div id="realMap" class="map-panel"></div>
 
     <div id="gameMap" class="game-map hidden">
-      <div class="zone-label zone-onn">🎵 お宿 Onn<br><small>LIVE SAFE</small></div>
-      <div class="zone-label zone-honmachi">🟡 本町<br><small>ALERT</small></div>
-      <div class="zone-label zone-shinmachi">🔴 新町<br><small>DANGER</small></div>
+      <div class="zone-label zone-onn">🎵 Onn<br><small>SAFE</small></div>
+      <div class="zone-label zone-honmachi">🟡 本町</div>
+      <div class="zone-label zone-shinmachi">🔴 新町</div>
 
       <div id="playerIcon" class="map-icon player">🔵</div>
       <div class="map-icon spot coffee">☕<span>HP</span></div>
@@ -152,23 +92,61 @@
       <button data-move="down">↓</button>
       <button data-move="right">→</button>
     </div>
-    <p class="hint">現実地図とゲーム地図を切り替えできます。</p>
   </section>
 
-  <section class="card">
-    <h2>HP CHARGE ZONE</h2>
+  <section class="quick-actions">
+    <button id="gpsBtn" class="secondary">📍 GPS</button>
+    <button id="roleBtn" class="primary">🟢 HUNTER</button>
+    <button id="vibeBtn" class="secondary">📳 TEST</button>
+  </section>
+
+  <section class="status-row">
+    <div><small>POINT</small><b id="points">0</b></div>
+    <div><small>HUNTER残り</small><b id="hunterTimer">-</b></div>
+    <div><small>ZONE</small><b id="zoneState">FIELD</b></div>
+  </section>
+
+  <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
+  <p id="battleStatus" class="notice">現在：通常エリア</p>
+  <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで開いて位置情報を許可してください。</p>
+
+  <details class="admin-panel">
+    <summary>📻 運営モードを開く</summary>
+    <div class="admin-buttons">
+      <button id="normalBtn">🌆 NORMAL</button>
+      <button id="alertBtn">⚠ ALERT</button>
+      <button id="bossBtn">👹 ボス出現</button>
+      <button id="missionBtn">🎯 本町集合</button>
+      <button id="liveBtn">🎵 オルタLIVE</button>
+      <button id="safeBtn">🛡 SAFE発動</button>
+      <button id="finalBtn">🔥 FINAL</button>
+      <button id="endBtn">🏆 END</button>
+    </div>
+  </details>
+
+  <details class="sub-panel">
+    <summary>🌆 街ステータス</summary>
+    <div class="player-counts">
+      <strong id="totalPlayersFull">18人参加中</strong>
+      <div class="count-row"><span>🟢 HUNTER</span><b id="hunterCount">5</b></div>
+      <div class="count-row"><span>🔵 RUNNER</span><b id="runnerCount">13</b></div>
+      <div class="count-row"><span>👹 BOSS</span><b id="bossCount">0</b></div>
+      <div class="count-row"><span>🎯 MISSION</span><b id="missionCount">0</b></div>
+      <div class="count-row"><span>🛡 SAFE</span><b id="safeCount">4</b></div>
+    </div>
+  </details>
+
+  <details class="sub-panel">
+    <summary>❤️ HP CHARGE ZONE</summary>
     <div id="shops" class="shop-list"></div>
-  </section>
+  </details>
 
-  <section class="card">
-    <h2>ゲーム情報</h2>
+  <details class="sub-panel">
+    <summary>📋 ゲーム情報 / ログ</summary>
     <div id="players" class="player-list"></div>
-  </section>
-
-  <section class="card wide">
-    <h2>運営ログ</h2>
     <div id="log" class="log"></div>
-  </section>
+  </details>
+
 </main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

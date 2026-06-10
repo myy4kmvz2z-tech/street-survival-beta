@@ -1,34 +1,20 @@
-# STREET SURVIVAL β1.0 Stage1
+# STREET SURVIVAL β1.1 Home Renewal
 
-## 第一段階で追加したもの
+## β1.1 目的
 
-- 画面半分サイズの巨大RUNNER / HUNTER表示
-- RUNNER表示
-  - 🔵 RUNNER
-  - 🏃 生存中
-  - 👀 気配なし
-- HUNTER表示
-  - 🟢 HUNTER
-  - 🎯 TARGET
-  - 距離表示
-- SAFE演出強化
-  - 画面が緑に光る
-  - 🛡 SAFE
-  - お宿 Onn
-  - ❤️ HP CHARGE
-  - ❤️ +2 が浮く
-- BOSS演出強化
-  - 👹 BOSS EVENT
-  - 新町 出現！！
-  - 画面揺れ
-  - バイブ
-- FINAL BATTLE演出強化
-  - 画面が赤くなる
-  - 🔥 FINAL BATTLE
-  - HP吸収2倍
-  - ポイント2倍
-  - ボス・ミッション同時発動
-- β0.9の運営モード・街状況・ゲーム地図を継続
+3秒で自分の状況が分かるホーム画面へ完全リニューアル。
+
+## 追加・変更
+
+- 超巨大ステータスを最上部に配置
+  - RUNNER / HUNTER / SAFE / BOSS / FINAL
+- HP・街状況・参加人数・残り時間を上部固定のミニ情報バー化
+- 地図を中央に配置
+- SAFE / BOSS / FINALを全画面演出
+- 運営モードを折りたたみ式に変更
+- RADIOをコンパクトなテロップに変更
+- スクロール量を大幅削減
+- β1.0 Stage1のゲーム機能は継続
 
 ## 更新方法
 

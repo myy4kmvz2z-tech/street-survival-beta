@@ -1,1 +1,83 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>STREET SURVIVAL β0.3</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/><link rel="stylesheet" href="style.css"/></head><body><header class="app-header"><div><h1>STREET SURVIVAL β0.3</h1><p>ハンター、ランナー、そして街でHPチャージ。</p></div><button id="resetBtn" class="ghost">リセット</button></header><main class="layout"><section class="card"><div class="row between"><div><h2>あなた</h2><p class="muted">プレイヤー名：<input id="playerName" value="RED"/></p></div><span id="roleBadge" class="badge runner">RUNNER</span></div><div class="hp-block"><div class="row between"><strong>HP</strong><span id="hpText">100 / 300</span></div><div class="bar"><div id="hpBar" class="bar-fill"></div></div></div><div class="stats"><div><span id="points">0</span><small>POINT</small></div><div><span id="roleTimer">60</span><small>交代まで</small></div><div><span id="zoneState">FIELD</span><small>ZONE</small></div></div><button id="gpsBtn" class="secondary">📍 GPS現在地を取得</button><button id="roleBtn" class="primary">🟢 ハンターにする</button><p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで開いて位置情報を許可してください。</p><p id="battleStatus" class="notice">現在：通常エリア</p></section><section class="card"><h2>地図フィールド</h2><div id="map"></div><div class="controls"><button data-move="up">↑</button><button data-move="left">←</button><button data-move="down">↓</button><button data-move="right">→</button></div><p class="hint">テスト移動でチャージゾーンや7m判定を確認できます。</p></section><section class="card"><h2>HP CHARGE ZONE</h2><div id="shops" class="shop-list"></div></section><section class="card"><h2>参加者 / NPC</h2><div id="players" class="player-list"></div></section><section class="card wide"><h2>運営ログ</h2><div id="log" class="log"></div></section></main><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>STREET SURVIVAL β0.4</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<header class="app-header">
+  <div>
+    <h1>STREET SURVIVAL β0.4</h1>
+    <p>近づくほど震える。街がハンターを知らせる。</p>
+  </div>
+  <button id="resetBtn" class="ghost">リセット</button>
+</header>
+
+<main class="layout">
+  <section class="card">
+    <div class="row between">
+      <div>
+        <h2>あなた</h2>
+        <p class="muted">プレイヤー名：<input id="playerName" value="RED"/></p>
+      </div>
+      <span id="roleBadge" class="badge runner">RUNNER</span>
+    </div>
+
+    <div class="hp-block">
+      <div class="row between">
+        <strong>HP</strong>
+        <span id="hpText">100 / 300</span>
+      </div>
+      <div class="bar"><div id="hpBar" class="bar-fill"></div></div>
+    </div>
+
+    <div class="stats">
+      <div><span id="points">0</span><small>POINT</small></div>
+      <div><span id="roleTimer">60</span><small>交代まで</small></div>
+      <div><span id="zoneState">FIELD</span><small>ZONE</small></div>
+    </div>
+
+    <button id="gpsBtn" class="secondary">📍 GPS現在地を取得</button>
+    <button id="roleBtn" class="primary">🟢 ハンターにする</button>
+    <button id="vibeBtn" class="secondary">📳 バイブテスト</button>
+
+    <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで開いて位置情報を許可してください。</p>
+    <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
+    <p id="battleStatus" class="notice">現在：通常エリア</p>
+  </section>
+
+  <section class="card">
+    <h2>地図フィールド</h2>
+    <div id="map"></div>
+    <div class="controls">
+      <button data-move="up">↑</button>
+      <button data-move="left">←</button>
+      <button data-move="down">↓</button>
+      <button data-move="right">→</button>
+    </div>
+    <p class="hint">テスト移動で15m/30m/7m判定を確認できます。</p>
+  </section>
+
+  <section class="card">
+    <h2>HP CHARGE ZONE</h2>
+    <div id="shops" class="shop-list"></div>
+  </section>
+
+  <section class="card">
+    <h2>参加者 / NPC</h2>
+    <div id="players" class="player-list"></div>
+  </section>
+
+  <section class="card wide">
+    <h2>運営ログ</h2>
+    <div id="log" class="log"></div>
+  </section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

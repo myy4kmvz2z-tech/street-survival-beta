@@ -163,3 +163,102 @@ body.fx-test-shake{animation:fxScreenShake .12s alternate 8}
 .admin-command-grid #adminEnd{background:#c0c0c0}
 .player-counts.always{margin-top:0}
 .admin-radio-input{width:100%;max-width:none;margin:0 0 10px;font-size:16px}
+
+
+/* β7.1 RADIO broadcast */
+.radio-popup{
+  position:fixed;
+  left:50%;
+  top:18%;
+  transform:translateX(-50%);
+  width:min(92vw,620px);
+  z-index:10001;
+  background:linear-gradient(180deg,#151b22,#050607);
+  border:3px solid var(--accent);
+  border-radius:28px;
+  padding:22px;
+  text-align:center;
+  box-shadow:0 0 55px rgba(247,201,72,.55),0 20px 60px rgba(0,0,0,.55);
+  animation:radioPop 5s ease-out forwards;
+}
+.radio-popup div{
+  color:var(--accent);
+  font-weight:1000;
+  font-size:20px;
+  letter-spacing:.05em;
+  margin-bottom:10px;
+}
+.radio-popup strong{
+  display:block;
+  font-size:28px;
+  line-height:1.35;
+  color:#fff;
+  text-shadow:0 0 16px rgba(255,255,255,.35);
+}
+@keyframes radioPop{
+  0%{opacity:0;transform:translateX(-50%) translateY(-18px) scale(.96)}
+  10%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+  82%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+  100%{opacity:0;transform:translateX(-50%) translateY(-18px) scale(1.03)}
+}
+body.radio-flash::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  pointer-events:none;
+  background:rgba(247,201,72,.22);
+  animation:radioFlash .8s ease-out forwards;
+}
+@keyframes radioFlash{
+  0%{opacity:0}
+  20%{opacity:1}
+  100%{opacity:0}
+}
+.radio-preset-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
+  margin-top:10px;
+}
+.radio-preset-grid button{
+  background:#7dd3fc;
+  border:0;
+  border-radius:14px;
+  padding:11px 8px;
+  font-size:12px;
+  font-weight:1000;
+}
+@media(max-width:640px){
+  .radio-popup{top:14%;padding:18px}
+  .radio-popup strong{font-size:22px}
+}
+
+
+/* β8.0 Firebase realtime status */
+.firebase-status{
+  position:fixed;
+  right:10px;
+  bottom:10px;
+  z-index:10002;
+  background:rgba(5,6,7,.86);
+  border:1px solid var(--line);
+  color:var(--muted);
+  border-radius:999px;
+  padding:7px 11px;
+  font-size:11px;
+  font-weight:900;
+  backdrop-filter:blur(10px);
+}
+.firebase-status.connected{
+  color:#111;
+  background:var(--good);
+}
+.firebase-status.error{
+  color:#111;
+  background:#ff6b6b;
+}
+.admin-firebase-status{
+  bottom:auto;
+  top:74px;
+}

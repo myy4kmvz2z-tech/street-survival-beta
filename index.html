@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β7.0</title>
+  <title>STREET SURVIVAL β8.0</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β7.0</h1>
-    <p>PLAYER MODE / 参加者専用画面。</p>
+    <h1>STREET SURVIVAL β8.0</h1>
+    <p>PLAYER MODE / Firebaseリアルタイム受信。</p>
   </div>
   <button id="resetBtn" class="ghost">RESET</button>
 </header>
@@ -28,6 +28,13 @@
 </div>
 
 <div id="fxToast" class="fx-toast hidden">🔊 FX TEST</div>
+
+<div id="firebaseStatus" class="firebase-status">🔥 Firebase: 未設定</div>
+
+<div id="radioPopup" class="radio-popup hidden">
+  <div>📻 STREET RADIO</div>
+  <strong id="radioPopupText">本町で戦闘発生！</strong>
+</div>
 
 <main class="hud">
 
@@ -164,6 +171,7 @@
 </main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="firebase-config.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

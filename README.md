@@ -1,52 +1,82 @@
-# STREET SURVIVAL β7.0 PLAYER / ADMIN Split
+# STREET SURVIVAL β8.0 Firebase Realtime
 
-## コンセプト
+## 追加内容
 
-参加者はゲームを楽しむ。運営は街を演出する。
+運営画面と参加者画面を Firebase Realtime Database で連携する土台を追加しました。
 
-## PLAYER画面 `index.html`
+運営画面で押した指令が、参加者画面へリアルタイム配信されます。
 
-- 参加者画面から運営モードを削除
-- GPS / ACTION / MENU のみ
-- 詳細・ログはMENU内
-- 参加者が誤ってBOSSやFINALを押すことを防止
+- 📻 RADIO
+- 👹 BOSS
+- 🎯 MISSION
+- 🎵 LIVE
+- 🛡 SAFE
+- 🔥 FINAL
+- 🏆 END
 
-## ADMIN画面 `admin.html`
+## 追加ファイル
 
-- 運営専用画面を追加
-- ワンタップ発令
-  - 🌆 NORMAL
-  - ⚠ ALERT
-  - 👹 BOSS
-  - 🎯 MISSION
-  - 🎵 LIVE
-  - 🛡 SAFE
-  - 🔥 FINAL
-  - 🏆 END
-- 手動RADIO送信
-- 街ステータス表示
-- 運営ログ表示
+- firebase-config.js
+
+ここにFirebaseの設定を貼ります。
 
 ## 重要
 
-現在のβ7.0では、`admin.html` から `index.html` への連携は
-同じ端末・同じブラウザ内のデモ用です。
+最初は Firebase OFF の状態です。
 
-参加者全員へリアルタイム配信する本番仕様には、
-Firebaseなどのサーバー連携が必要です。
+`firebase-config.js` の中で、
 
-## 使い方
+```js
+window.STREET_SURVIVAL_FIREBASE_ENABLED = false;
+```
 
-- 参加者：`index.html`
-- 運営：`admin.html`
+を
 
-## 更新方法
+```js
+window.STREET_SURVIVAL_FIREBASE_ENABLED = true;
+```
 
-GitHubのトップに以下6ファイルをアップロードしてください。
+に変更するとFirebase連携が有効になります。
+
+その前に Firebase Console で取得した `firebaseConfig` の値を貼り替えてください。
+
+## Firebaseで作るもの
+
+Firebase Consoleで以下を作ります。
+
+1. Project
+2. Web App
+3. Realtime Database
+4. Rulesをテスト用に一時的に設定
+
+テスト用Rules例：
+
+```json
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+```
+
+※ 本番では必ず認証やパスワード保護が必要です。
+
+## 参加者用
 
 - index.html
-- admin.html
 - style.css
 - app.js
+- firebase-config.js
+
+## 運営用
+
+- admin.html
+- style.css
 - admin.js
-- README.md
+- firebase-config.js
+
+## 注意
+
+GitHub Pagesだけでは全員同期はできません。
+Firebase Realtime Databaseを使うことで、運営から参加者全員へリアルタイム配信できます。

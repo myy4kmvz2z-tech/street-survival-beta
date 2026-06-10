@@ -1,4 +1,52 @@
 
+// β8.0 Firebase realtime send
+let firebaseApp = null;
+let firebaseDb = null;
+
+function setAdminFirebaseStatus(text, cls=""){
+  const el = $("adminFirebaseStatus");
+  if(!el) return;
+  el.textContent = text;
+  el.className = "firebase-status admin-firebase-status " + cls;
+}
+
+function loadScript(src){
+  return new Promise((resolve,reject)=>{
+    if(document.querySelector(`script[src="${src}"]`)) return resolve();
+    const s=document.createElement("script");
+    s.src=src;
+    s.onload=resolve;
+    s.onerror=reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function initFirebaseAdmin(){
+  if(!window.STREET_SURVIVAL_FIREBASE_ENABLED){
+    setAdminFirebaseStatus("🔥 Firebase: OFF / デモ", "");
+    return;
+  }
+  try{
+    await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
+    await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js");
+    firebaseApp = firebase.initializeApp(window.STREET_SURVIVAL_FIREBASE_CONFIG);
+    firebaseDb = firebase.database();
+    setAdminFirebaseStatus("🔥 Firebase: 接続中", "connected");
+    addLog("🔥 Firebase ADMIN 接続");
+  }catch(e){
+    console.error(e);
+    setAdminFirebaseStatus("🔥 Firebase: エラー", "error");
+    addLog("🔥 Firebase接続エラー: " + e.message);
+  }
+}
+
+function sendFirebaseCommand(cmd){
+  if(!window.STREET_SURVIVAL_FIREBASE_ENABLED || !firebaseDb) return;
+  firebaseDb.ref("streetSurvival/currentCommand").set(cmd);
+  firebaseDb.ref("streetSurvival/commandLog").push(cmd);
+}
+
+
 const $ = id => document.getElementById(id);
 
 const state = { mode:"NORMAL", total:18, hunter:5, runner:13, boss:0, mission:0, safe:4, log:[] };
@@ -39,6 +87,7 @@ function command(type, message){
   const id = Date.now() + "_" + Math.random().toString(16).slice(2);
   const cmd = { id, type, message: message || type, at: new Date().toISOString() };
   localStorage.setItem("street_survival_admin_command", JSON.stringify(cmd));
+  sendFirebaseCommand(cmd);
   applyLocal(type);
   playAdminSound(type);
   addLog(`📡 ${type}${message ? " / " + message : ""}`);
@@ -60,6 +109,16 @@ function addLog(text){
   state.log = state.log.slice(0,80);
   render();
 }
+
+function sendRadio(message){
+  const id = Date.now() + "_" + Math.random().toString(16).slice(2);
+  const cmd = { id, type:"RADIO", message, at:new Date().toISOString() };
+  localStorage.setItem("street_survival_admin_command", JSON.stringify(cmd));
+  sendFirebaseCommand(cmd);
+  playAdminSound("MISSION");
+  addLog("📻 RADIO / " + message);
+}
+
 function render(){
   $("adminModeText").textContent = state.mode;
   $("adminTotal").textContent = state.total;
@@ -79,7 +138,13 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("adminSafe").addEventListener("click",()=>command("SAFE","お宿 Onn SAFE発動"));
   $("adminFinal").addEventListener("click",()=>command("FINAL","FINAL BATTLE"));
   $("adminEnd").addEventListener("click",()=>command("END","GAME END"));
-  $("adminRadioSend").addEventListener("click",()=>command("RADIO",$("adminRadioInput").value || "運営速報"));
-  addLog("ADMIN MODE 起動");
+  $("adminRadioSend").addEventListener("click",()=>sendRadio($("adminRadioInput").value || "運営速報"));
+  document.querySelectorAll("[data-radio]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      $("adminRadioInput").value = btn.dataset.radio;
+      sendRadio(btn.dataset.radio);
+    });
+  });
+  addLog("ADMIN MODE β8.0 起動");initFirebaseAdmin();
   render();
 });

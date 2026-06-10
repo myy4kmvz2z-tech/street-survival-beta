@@ -203,8 +203,79 @@ if($("missionSoundBtn")) $("missionSoundBtn").addEventListener("click",()=>{show
 if($("liveSoundBtn")) $("liveSoundBtn").addEventListener("click",()=>{showEffect("live","🎵","LIVE SOUND");addLog("🎵 LIVE SOUND");});
 if($("finalSoundBtn")) $("finalSoundBtn").addEventListener("click",()=>{showEffect("final","🔥","FINAL SOUND");addLog("🔥 FINAL SOUND");});
 if($("endSoundBtn")) $("endSoundBtn").addEventListener("click",()=>{showEffect("end","🏆","END SOUND");addLog("🏆 END SOUND");});
-$("mapModeBtn").addEventListener("click",cycleViewMode);addLog("STREET SURVIVAL β5.0 起動");render();setInterval(gameTick,1000);setInterval(render,1000);});
+$("mapModeBtn").addEventListener("click",cycleViewMode);addLog("STREET SURVIVAL β8.0 起動");initFirebasePlayer();render();setInterval(gameTick,1000);setInterval(render,1000);});
 
+
+
+function receiveRadio(message){
+  setRadio(message);
+  const popup = $("radioPopup");
+  if(popup){
+    $("radioPopupText").textContent = message;
+    popup.classList.remove("hidden");
+    popup.style.animation = "none";
+    void popup.offsetWidth;
+    popup.style.animation = "";
+    setTimeout(()=>popup.classList.add("hidden"), 5000);
+  }
+  document.body.classList.remove("radio-flash");
+  void document.body.offsetWidth;
+  document.body.classList.add("radio-flash");
+  setTimeout(()=>document.body.classList.remove("radio-flash"), 1000);
+  showEffect("mission","📻","RADIO", false);
+  playTone("mission");
+}
+
+
+// β8.0 Firebase realtime receive
+let firebaseApp = null;
+let firebaseDb = null;
+let firebaseLastCommandId = null;
+
+function setFirebaseStatus(text, cls=""){
+  const el = $("firebaseStatus");
+  if(!el) return;
+  el.textContent = text;
+  el.className = "firebase-status " + cls;
+}
+
+function loadScript(src){
+  return new Promise((resolve,reject)=>{
+    if(document.querySelector(`script[src="${src}"]`)) return resolve();
+    const s=document.createElement("script");
+    s.src=src;
+    s.onload=resolve;
+    s.onerror=reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function initFirebasePlayer(){
+  if(!window.STREET_SURVIVAL_FIREBASE_ENABLED){
+    setFirebaseStatus("🔥 Firebase: OFF / デモ", "");
+    return;
+  }
+  try{
+    await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
+    await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js");
+    firebaseApp = firebase.initializeApp(window.STREET_SURVIVAL_FIREBASE_CONFIG);
+    firebaseDb = firebase.database();
+
+    firebaseDb.ref("streetSurvival/currentCommand").on("value", snap=>{
+      const cmd = snap.val();
+      if(!cmd || cmd.id === firebaseLastCommandId) return;
+      firebaseLastCommandId = cmd.id;
+      applyAdminCommand(cmd);
+    });
+
+    setFirebaseStatus("🔥 Firebase: 接続中", "connected");
+    addLog("🔥 Firebase PLAYER 接続");
+  }catch(e){
+    console.error(e);
+    setFirebaseStatus("🔥 Firebase: エラー", "error");
+    addLog("🔥 Firebase接続エラー: " + e.message);
+  }
+}
 
 // β7.0: receive admin commands from admin.html on same browser via localStorage.
 let lastAdminCommandId = null;
@@ -220,8 +291,7 @@ function applyAdminCommand(cmd){
   if(cmd.type === "FINAL") triggerFinal();
   if(cmd.type === "END") triggerEnd();
   if(cmd.type === "RADIO"){
-    setRadio(cmd.message || "運営速報");
-    showEffect("mission","📻","RADIO");
+    receiveRadio(cmd.message || "運営速報");
   }
 }
 function pollAdminCommand(){

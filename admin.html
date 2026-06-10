@@ -3,17 +3,19 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β7.0 ADMIN</title>
+  <title>STREET SURVIVAL β8.0 ADMIN</title>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body class="admin-body">
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β7.0</h1>
-    <p>ADMIN MODE / 運営が街を動かす。</p>
+    <h1>STREET SURVIVAL β8.0</h1>
+    <p>ADMIN MODE / Firebaseリアルタイム送信。</p>
   </div>
   <a class="ghost admin-link" href="index.html">PLAYER</a>
 </header>
+
+<div id="adminFirebaseStatus" class="firebase-status admin-firebase-status">🔥 Firebase: 未設定</div>
 
 <main class="hud admin-hud">
   <section class="admin-hero">
@@ -53,6 +55,15 @@
     <h2>📻 手動RADIO</h2>
     <input id="adminRadioInput" class="admin-radio-input" value="本町で戦闘発生！"/>
     <button id="adminRadioSend" class="full">📡 RADIO送信</button>
+
+    <div class="radio-preset-grid" id="radioPresetGrid">
+      <button data-radio="👹 新町にボス出現！">👹 ボス出現</button>
+      <button data-radio="🎯 本町集合ミッション開始！">🎯 本町集合</button>
+      <button data-radio="🎵 オルタネーターズLIVE開始！お宿 Onn前へ！">🎵 LIVE開始</button>
+      <button data-radio="🛡 お宿 Onn SAFE ZONE発動！HP回復できます！">🛡 SAFE発動</button>
+      <button data-radio="🔥 FINAL BATTLE開始！HP吸収2倍！POINT2倍！">🔥 FINAL</button>
+      <button data-radio="🏆 GAME END！お宿 Onn前へ集合！">🏆 END</button>
+    </div>
     <p class="hint">同じ端末・同じブラウザ内ではPLAYER画面にも反映されます。本番で全員に同期するにはFirebase等のサーバー連携が必要です。</p>
   </section>
 
@@ -62,6 +73,7 @@
   </section>
 </main>
 
+<script src="firebase-config.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>

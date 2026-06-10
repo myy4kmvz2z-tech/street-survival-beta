@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β2.0</title>
+  <title>STREET SURVIVAL β3.0</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β2.0</h1>
-    <p>3秒で分かる、街RPG端末。</p>
+    <h1>STREET SURVIVAL β3.0</h1>
+    <p>中津川を、1日だけリアルRPGに。</p>
   </div>
   <button id="resetBtn" class="ghost">リセット</button>
 </header>
@@ -36,10 +36,10 @@
     <div id="statusNote" class="status-note">👀 気配なし</div>
 
     <div class="info-grid">
-      <div><small>❤️ HP</small><b id="hpText">100/300</b></div>
-      <div><small>👥 人数</small><b id="totalPlayers">18</b></div>
-      <div><small>🔥 街</small><b id="cityModeMini">NORMAL</b></div>
-      <div><small>⏰ 残り</small><b id="eventTimer">6:00</b></div>
+      <div><span>❤️</span><b id="hpText">100/300</b></div>
+      <div><span>👥</span><b id="totalPlayers">18</b></div>
+      <div><span>🔥</span><b id="cityModeMini">NORMAL</b></div>
+      <div><span>⏰</span><b id="eventTimer">6:00</b></div>
     </div>
 
     <div class="hp-line">
@@ -50,7 +50,7 @@
 
   <section class="map-section">
     <div class="map-head">
-      <h2>🗺️ FIELD</h2>
+      <h2>🗺 GAME MAP</h2>
       <button id="mapModeBtn" class="mini">🗺 現実地図</button>
     </div>
 
@@ -73,6 +73,18 @@
     </div>
 
     <div id="realMap" class="real-map hidden"></div>
+  </section>
+
+  <div id="radioTicker" class="radio-ticker">📻 ゲーム開始 ｜ 👹 ボス出現 ｜ 🎯 本町集合 ｜ 🎵 LIVE SAFE</div>
+
+  <section class="action-row">
+    <button id="gpsBtn" class="secondary">📍 GPS</button>
+    <button id="roleBtn" class="primary">🟢 HUNTER</button>
+    <button id="menuBtn" class="secondary">⚙ MENU</button>
+  </section>
+
+  <details id="menuPanel" class="menu-panel">
+    <summary>⚙ 詳細メニュー</summary>
 
     <div class="move-controls">
       <button data-move="up">↑</button>
@@ -80,25 +92,19 @@
       <button data-move="down">↓</button>
       <button data-move="right">→</button>
     </div>
-  </section>
 
-  <section class="action-row">
-    <button id="gpsBtn" class="secondary">📍 GPS</button>
-    <button id="roleBtn" class="primary">🟢 HUNTER</button>
-    <button id="vibeBtn" class="secondary">📳 TEST</button>
-  </section>
+    <button id="vibeBtn" class="secondary full">📳 バイブテスト</button>
 
-  <div id="radioTicker" class="radio-ticker">📻 ゲーム開始準備中 ｜ 👹 ボス出現 ｜ 🎯 本町集合 ｜ 🎵 オルタLIVE ｜ 🛡 SAFE ｜ 🔥 FINAL</div>
+    <div class="mini-status">
+      <div><small>POINT</small><b id="points">0</b></div>
+      <div><small>HUNTER</small><b id="hunterTimer">-</b></div>
+      <div><small>ZONE</small><b id="zoneState">FIELD</b></div>
+    </div>
 
-  <section class="mini-status">
-    <div><small>POINT</small><b id="points">0</b></div>
-    <div><small>HUNTER</small><b id="hunterTimer">-</b></div>
-    <div><small>ZONE</small><b id="zoneState">FIELD</b></div>
-  </section>
-
-  <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
-  <p id="battleStatus" class="notice">現在：通常エリア</p>
-  <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで位置情報を許可してください。</p>
+    <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
+    <p id="battleStatus" class="notice">現在：通常エリア</p>
+    <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで位置情報を許可してください。</p>
+  </details>
 
   <details class="admin-panel">
     <summary>📻 運営モード</summary>

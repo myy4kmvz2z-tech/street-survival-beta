@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β5.0</title>
+  <title>STREET SURVIVAL β6.0</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β5.0</h1>
-    <p>Tactical HUD / 街がゲーム盤になる。</p>
+    <h1>STREET SURVIVAL β6.0</h1>
+    <p>Effects HUD / 光る・揺れる・鳴る。</p>
   </div>
   <button id="resetBtn" class="ghost">RESET</button>
 </header>
@@ -20,6 +20,11 @@
   <div id="fullEventIcon">🔥</div>
   <strong id="fullEventTitle">FINAL BATTLE</strong>
   <span id="fullEventSub">HP吸収2倍・ポイント2倍</span>
+</div>
+
+<div id="effectOverlay" class="effect-overlay hidden">
+  <div id="effectIcon">⚡</div>
+  <strong id="effectText">EFFECT</strong>
 </div>
 
 <main class="hud">
@@ -105,6 +110,7 @@
   <section class="action-row">
     <button id="gpsBtn" class="secondary">📍 GPS</button>
     <button id="roleBtn" class="primary">🟢 ACTION</button>
+    <button id="effectBtn" class="secondary">🔊 FX</button>
     <button id="menuBtn" class="secondary">⚙ MENU</button>
   </section>
 
@@ -118,7 +124,7 @@
       <button data-move="right">→</button>
     </div>
 
-    <button id="vibeBtn" class="secondary full">📳 バイブテスト</button>
+    <button id="vibeBtn" class="secondary full">🔊 演出テスト</button>
 
     <div class="mini-status">
       <div><small>POINT</small><b id="points">0</b></div>

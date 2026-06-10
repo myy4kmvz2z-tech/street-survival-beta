@@ -1,23 +1,31 @@
-# STREET SURVIVAL β5.0 Tactical HUD
+# STREET SURVIVAL β6.0 Effects HUD
 
 ## コンセプト
 
-街を歩く人が、スマホを見た瞬間に自分がRPGの主人公になったと感じるUI。
+iPhoneでバイブが使えなくても、光る・揺れる・鳴るで状況が伝わる版。
 
-## β5.0 変更点
+## 追加したもの
 
-- Tactical HUD風ホーム画面
-- 上部に巨大ステータス
-- 中央に丸型レーダー
-- 自分は常に中央
-- HP / SAFE / LIVE / 本町 / 新町 / BOSS / MISSION / HUNTER をレーダー表示
-- SAFE時は緑波動
-- BOSS時はWARNING演出
-- FINAL時は赤いHUD演出
-- 下部は RADIO速報
-- 操作は GPS / ACTION / MENU の3つ
-- MENU内に運営・ログ・詳細を格納
-- 地図モードは RADAR / GAME / REAL 切替
+- 🔊 効果音システム
+  - SAFE：高めのピロン音
+  - LIVE：明るい通知音
+  - BOSS：低い警告音
+  - FINAL：重い警告音
+  - MISSION：黄色系の通知音
+- ✨ 画面フラッシュ
+  - SAFE：緑
+  - BOSS：赤
+  - FINAL：強い赤
+  - MISSION：黄色
+- 📡 レーダー波紋エフェクト
+- ❤️ HP回復時の音と +2 演出
+- 🔊 FXボタン追加
+- 📳 バイブテストを「演出テスト」に変更
+
+## 注意
+
+iPhone Safariでは `navigator.vibrate()` が基本的に動かないため、
+β6.0ではバイブに依存せず、画面演出と効果音で知らせる設計に変更しています。
 
 ## 更新方法
 

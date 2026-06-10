@@ -262,3 +262,10 @@ body.radio-flash::before{
   bottom:auto;
   top:74px;
 }
+
+/* β8.1 Firebase Fix */
+.firebase-status{position:fixed;right:10px;bottom:10px;z-index:10050;background:rgba(5,6,7,.90);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:8px 12px;font-size:11px;font-weight:1000;backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.firebase-status.connected{color:#111;background:#59d68d}
+.firebase-status.error{color:#111;background:#ff6b6b}
+.firebase-status.demo{color:#111;background:#f7c948}
+.admin-firebase-status{bottom:auto;top:74px}

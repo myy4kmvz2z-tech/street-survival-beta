@@ -203,7 +203,7 @@ if($("missionSoundBtn")) $("missionSoundBtn").addEventListener("click",()=>{show
 if($("liveSoundBtn")) $("liveSoundBtn").addEventListener("click",()=>{showEffect("live","🎵","LIVE SOUND");addLog("🎵 LIVE SOUND");});
 if($("finalSoundBtn")) $("finalSoundBtn").addEventListener("click",()=>{showEffect("final","🔥","FINAL SOUND");addLog("🔥 FINAL SOUND");});
 if($("endSoundBtn")) $("endSoundBtn").addEventListener("click",()=>{showEffect("end","🏆","END SOUND");addLog("🏆 END SOUND");});
-$("mapModeBtn").addEventListener("click",cycleViewMode);addLog("STREET SURVIVAL β8.0 起動");initFirebasePlayer();render();setInterval(gameTick,1000);setInterval(render,1000);});
+$("mapModeBtn").addEventListener("click",cycleViewMode);addLog("STREET SURVIVAL β8.1 起動");initFirebasePlayer();render();setInterval(gameTick,1000);setInterval(render,1000);});
 
 
 
@@ -227,7 +227,7 @@ function receiveRadio(message){
 }
 
 
-// β8.0 Firebase realtime receive
+// β8.1 Firebase realtime receive
 let firebaseApp = null;
 let firebaseDb = null;
 let firebaseLastCommandId = null;
@@ -302,3 +302,90 @@ function pollAdminCommand(){
 }
 setInterval(pollAdminCommand, 800);
 window.addEventListener("storage", pollAdminCommand);
+
+
+/* β8.1 FIREBASE FIX - PLAYER */
+let ssFirebasePlayerDb = null;
+let ssFirebasePlayerLastId = null;
+
+function ssSetFirebaseStatus(text, cls){
+  const el = document.getElementById("firebaseStatus");
+  if(!el) return;
+  el.textContent = text;
+  el.className = "firebase-status " + (cls || "");
+}
+
+function ssLoadScript(src){
+  return new Promise((resolve, reject)=>{
+    if(document.querySelector('script[src="'+src+'"]')) return resolve();
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function ssApplyFirebaseCommand(cmd){
+  if(!cmd || !cmd.type) return;
+  if(cmd.id && cmd.id === ssFirebasePlayerLastId) return;
+  ssFirebasePlayerLastId = cmd.id || String(Date.now());
+
+  try{
+    if(cmd.type === "RADIO"){
+      if(typeof receiveRadio === "function") receiveRadio(cmd.message || "運営速報");
+      else if(typeof setRadio === "function") setRadio(cmd.message || "運営速報");
+      return;
+    }
+    if(cmd.type === "NORMAL" && typeof normalMode === "function") normalMode();
+    if(cmd.type === "ALERT" && typeof alertMode === "function") alertMode();
+    if(cmd.type === "BOSS" && typeof triggerBoss === "function") triggerBoss();
+    if(cmd.type === "MISSION" && typeof triggerMission === "function") triggerMission();
+    if(cmd.type === "LIVE" && typeof triggerLive === "function") triggerLive();
+    if(cmd.type === "SAFE" && typeof triggerSafe === "function") triggerSafe();
+    if(cmd.type === "FINAL" && typeof triggerFinal === "function") triggerFinal();
+    if(cmd.type === "END" && typeof triggerEnd === "function") triggerEnd();
+    if(typeof addLog === "function") addLog("🔥 Firebase受信: " + cmd.type);
+  }catch(e){
+    console.error("Firebase command error", e);
+    if(typeof addLog === "function") addLog("🔥 Firebase受信エラー: " + e.message);
+  }
+}
+
+async function initFirebasePlayer(){
+  try{
+    if(!window.STREET_SURVIVAL_FIREBASE_ENABLED){
+      ssSetFirebaseStatus("🔥 Firebase: OFF / デモ", "demo");
+      if(typeof addLog === "function") addLog("🔥 Firebase OFF / デモ");
+      return;
+    }
+    if(!window.STREET_SURVIVAL_FIREBASE_CONFIG){
+      ssSetFirebaseStatus("🔥 Firebase: Configなし", "error");
+      if(typeof addLog === "function") addLog("🔥 Firebase Configなし");
+      return;
+    }
+    ssSetFirebaseStatus("🔥 Firebase: 接続準備中", "demo");
+    await ssLoadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
+    await ssLoadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js");
+    if(!firebase.apps.length){
+      firebase.initializeApp(window.STREET_SURVIVAL_FIREBASE_CONFIG);
+    }
+    ssFirebasePlayerDb = firebase.database();
+    ssFirebasePlayerDb.ref("streetSurvival/currentCommand").on("value", snap=>{
+      const cmd = snap.val();
+      if(cmd) ssApplyFirebaseCommand(cmd);
+    });
+    ssSetFirebaseStatus("🔥 Firebase: 接続中", "connected");
+    if(typeof addLog === "function") addLog("🔥 Firebase PLAYER 接続中");
+  }catch(e){
+    console.error(e);
+    ssSetFirebaseStatus("🔥 Firebase: エラー", "error");
+    if(typeof addLog === "function") addLog("🔥 Firebase接続エラー: " + e.message);
+  }
+}
+
+window.addEventListener("load", ()=>{
+  setTimeout(()=>{
+    if(!ssFirebasePlayerDb) initFirebasePlayer();
+  }, 300);
+});

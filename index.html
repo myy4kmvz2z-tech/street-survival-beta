@@ -3,20 +3,37 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β0.6</title>
+  <title>STREET SURVIVAL β0.7</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="app-header">
   <div>
-    <h1>STREET SURVIVAL β0.6</h1>
-    <p>6時間イベント仕様。捕まったら、今度は追う側へ。</p>
+    <h1>STREET SURVIVAL β0.7</h1>
+    <p>街が実況し、ミッションが動き、ボスが現れる。</p>
   </div>
   <button id="resetBtn" class="ghost">リセット</button>
 </header>
 
 <main class="layout">
+
+  <section class="card wide top-status">
+    <div class="radio-box">
+      <strong>📻 STREET SURVIVAL RADIO</strong>
+      <p id="radioText">本町・新町・お宿 Onn周辺、ゲーム開始準備中。</p>
+    </div>
+    <div class="event-clock">
+      <small>⏰ EVENT TIME</small>
+      <strong id="eventTimer">6:00:00</strong>
+    </div>
+    <div class="street-level">
+      <small>🌆 STREET LEVEL</small>
+      <strong id="streetLevel">★☆☆☆☆</strong>
+      <span id="streetLevelText">参加者 18人 / 次まで2人</span>
+    </div>
+  </section>
+
   <section class="card">
     <div class="row between">
       <div>
@@ -26,12 +43,18 @@
       <span id="roleBadge" class="badge runner">RUNNER</span>
     </div>
 
+    <div id="bigStatus" class="big-status runner-status">
+      <strong>🔵 RUNNER</strong>
+      <span>気配なし。街を読め。</span>
+    </div>
+
     <div class="hp-block">
       <div class="row between">
         <strong>HP</strong>
         <span id="hpText">100 / 300</span>
       </div>
       <div class="bar"><div id="hpBar" class="bar-fill"></div></div>
+      <div id="chargeFloat" class="charge-float hidden">❤️ +2</div>
     </div>
 
     <div class="stats">
@@ -43,6 +66,12 @@
     <button id="gpsBtn" class="secondary">📍 GPS現在地を取得</button>
     <button id="roleBtn" class="primary">🟢 ハンターにする</button>
     <button id="vibeBtn" class="secondary">📳 バイブテスト</button>
+
+    <div class="admin-buttons">
+      <button id="bossBtn">👹 ボス出現</button>
+      <button id="missionBtn">🎯 ミッション発令</button>
+      <button id="liveBtn">🎵 LIVE速報</button>
+    </div>
 
     <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで開いて位置情報を許可してください。</p>
     <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
@@ -67,8 +96,8 @@
       <div class="map-icon spot coffee">☕<span>HP</span></div>
       <div class="map-icon spot ramen">🍜<span>HP</span></div>
       <div class="map-icon spot onn">🎵<span>LIVE</span></div>
-      <div id="bossIcon" class="map-icon boss">👹<span>BOSS</span></div>
-      <div id="missionIcon" class="map-icon mission">🎯<span>MISSION</span></div>
+      <div id="bossIcon" class="map-icon boss hidden">👹<span>BOSS</span></div>
+      <div id="missionIcon" class="map-icon mission hidden">🎯<span>MISSION</span></div>
 
       <div id="dangerRing" class="danger-ring hidden"></div>
       <div class="street-line line-a"></div>

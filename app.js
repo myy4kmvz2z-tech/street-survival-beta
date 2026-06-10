@@ -2,6 +2,7 @@
 const DEFAULT_CENTER = { lat: 35.5008, lng: 137.5032 };
 
 const CONFIG = {
+  eventDurationSec: 21600,
   initialHp: 100,
   maxHp: 300,
   minHp: 0,
@@ -15,6 +16,10 @@ const CONFIG = {
 };
 
 const state = {
+  eventStartAt: Date.now(),
+  participantCount: 18,
+  bossActive: false,
+  missionActive: false,
   mapMode: "real",
   me: {
     id: "me", name: "RED", hp: 100, points: 0, role: "runner",
@@ -45,6 +50,11 @@ function addLog(text) {
   render();
 }
 
+function setRadio(text) {
+  $("radioText").textContent = text;
+  addLog("📻 " + text);
+}
+
 function meters(a, b) {
   const R = 6371000;
   const p1 = a.lat * Math.PI / 180, p2 = b.lat * Math.PI / 180;
@@ -71,6 +81,12 @@ function alertVibration(level) {
     vibrate(pattern);
     state.lastVibeAt = now;
   }
+}
+
+function updateBigStatus(type, title, text) {
+  const el = $("bigStatus");
+  el.className = "big-status " + type;
+  el.innerHTML = `<strong>${title}</strong><span>${text}</span>`;
 }
 
 function initMap() {
@@ -151,6 +167,7 @@ function setRole(role) {
   state.me.hunterEndsAt = role === "hunter" ? Date.now() + CONFIG.hunterMaxSec * 1000 : null;
   state.me.invincibleUntil = Date.now() + CONFIG.invincibleSec * 1000;
   addLog(role === "hunter" ? "🟢 あなたはHUNTERになりました" : "🔵 あなたはRUNNERになりました");
+  setRadio(role === "hunter" ? "ハンター誕生。街の気配を読め。" : "ランナー復帰。SAFE ZONEと街ミッションを活用せよ。");
   render();
 }
 
@@ -158,15 +175,13 @@ function swapRolesWith(target) {
   const oldRole = state.me.role;
   state.me.role = target.role;
   target.role = oldRole;
-
   state.me.hp = CONFIG.initialHp;
   target.hp = CONFIG.initialHp;
-
   state.me.hunterEndsAt = state.me.role === "hunter" ? Date.now() + CONFIG.hunterMaxSec * 1000 : null;
   target.hunterEndsAt = target.role === "hunter" ? Date.now() + CONFIG.hunterMaxSec * 1000 : null;
   state.me.invincibleUntil = Date.now() + CONFIG.invincibleSec * 1000;
-
   addLog("🔄 HP0。役割交代！");
+  setRadio("役割交代発生！捕まった者が、次は追う側へ。");
   vibrate([200, 80, 200]);
 }
 
@@ -176,6 +191,7 @@ function hunterTimeout() {
     state.me.hunterEndsAt = null;
     state.me.invincibleUntil = Date.now() + CONFIG.invincibleSec * 1000;
     addLog("⏰ ハンター10分終了。ランナーに戻りました");
+    setRadio("ハンター10分終了。ランナーへ復帰。");
   }
 }
 
@@ -191,6 +207,8 @@ function updateGameMap(alertLevel) {
   gameMap.classList.toggle("alert", ["runner10", "contact", "hunterSense"].includes(alertLevel));
   ring.classList.toggle("hidden", !["runner10", "contact", "hunterSense"].includes(alertLevel));
   $("playerIcon").textContent = state.me.role === "hunter" ? "🟢" : "🔵";
+  $("bossIcon").classList.toggle("hidden", !state.bossActive);
+  $("missionIcon").classList.toggle("hidden", !state.missionActive);
 }
 
 function isInvincible() {
@@ -206,25 +224,36 @@ function updateAlert(nearest, distance, zone) {
   if (zone) {
     box.textContent = `🛡 ${zone.name}：SAFE / バイブ停止`;
     box.classList.add("safe");
+    updateBigStatus("safe-status", "🛡 SAFE", `${zone.name}でHPチャージ中`);
     updateGameMap("safe");
     return;
   }
 
   if (isInvincible()) {
-    box.textContent = `🛡 無敵中：${Math.ceil((state.me.invincibleUntil-Date.now())/1000)}秒`;
+    const s = Math.ceil((state.me.invincibleUntil-Date.now())/1000);
+    box.textContent = `🛡 無敵中：${s}秒`;
     box.classList.add("safe");
+    updateBigStatus("safe-status", "🛡 INVINCIBLE", `無敵中 ${s}秒`);
     updateGameMap("safe");
     return;
+  }
+
+  if (state.bossActive) {
+    updateBigStatus("boss-status", "👹 BOSS ACTIVE", "街にレイドボス出現中");
+  } else if (state.missionActive) {
+    updateBigStatus("mission-status", "🎯 MISSION", "本町へ向かえ！");
   }
 
   if (state.me.role === "hunter") {
     if (nearest && distance <= CONFIG.hunterSenseM) {
       box.textContent = `📳 ランナーの気配あり：${distance.toFixed(1)}m以内`;
       box.classList.add("level2");
+      updateBigStatus("hunter-status", "🟢 HUNTER", `📳 気配あり ${distance.toFixed(1)}m`);
       alertVibration("hunterSense");
       level = "hunterSense";
     } else {
       box.textContent = "🟢 ハンター：気配なし";
+      if (!state.bossActive && !state.missionActive) updateBigStatus("hunter-status", "🟢 HUNTER", "気配なし。街を読め。");
     }
     updateGameMap(level);
     return;
@@ -232,6 +261,7 @@ function updateAlert(nearest, distance, zone) {
 
   if (!nearest) {
     box.textContent = "🔵 ランナー：通常";
+    if (!state.bossActive && !state.missionActive) updateBigStatus("runner-status", "🔵 RUNNER", "気配なし。街を読め。");
     updateGameMap(level);
     return;
   }
@@ -240,28 +270,42 @@ function updateAlert(nearest, distance, zone) {
     box.textContent = `⚔ 接触！HP吸収中：${distance.toFixed(1)}m`;
     box.classList.add("level3");
     document.body.classList.add("danger-flash");
+    updateBigStatus("battle-status", "⚔ BATTLE", `HP吸収中 ${distance.toFixed(1)}m`);
     alertVibration("contact");
     level = "contact";
   } else if (distance <= 10) {
     box.textContent = `🚨 危険！ハンター接近：${distance.toFixed(1)}m`;
     box.classList.add("level3");
     document.body.classList.add("danger-flash");
+    updateBigStatus("battle-status", "🚨 DANGER", `ハンター接近 ${distance.toFixed(1)}m`);
     alertVibration("runner10");
     level = "runner10";
   } else if (distance <= 20) {
     box.textContent = `⚠ ハンター接近：${Math.round(distance)}m`;
     box.classList.add("level2");
+    updateBigStatus("runner-status", "⚠ ALERT", `ハンター接近 ${Math.round(distance)}m`);
     alertVibration("runner20");
     level = "runner20";
   } else if (distance <= 30) {
     box.textContent = `👀 気配を感じる：${Math.round(distance)}m`;
     box.classList.add("level1");
+    updateBigStatus("runner-status", "👀 SIGN", `気配あり ${Math.round(distance)}m`);
     alertVibration("runner30");
     level = "runner30";
   } else {
     box.textContent = "🔵 ランナー：通常";
+    if (!state.bossActive && !state.missionActive) updateBigStatus("runner-status", "🔵 RUNNER", "気配なし。街を読め。");
   }
   updateGameMap(level);
+}
+
+function showChargeFloat() {
+  const el = $("chargeFloat");
+  el.classList.remove("hidden");
+  el.style.animation = "none";
+  void el.offsetWidth;
+  el.style.animation = "";
+  setTimeout(() => el.classList.add("hidden"), 900);
 }
 
 function gameTick() {
@@ -287,7 +331,10 @@ function gameTick() {
       const before = state.me.hp;
       state.me.hp = clamp(state.me.hp + CONFIG.chargePerTick, CONFIG.minHp, CONFIG.maxHp);
       state.lastChargeAt = now;
-      if (state.me.hp > before) addLog(`❤️ ${zone.name}でHP +${CONFIG.chargePerTick}`);
+      if (state.me.hp > before) {
+        addLog(`❤️ ${zone.name}でHP +${CONFIG.chargePerTick}`);
+        showChargeFloat();
+      }
     }
     render();
     return;
@@ -306,16 +353,12 @@ function gameTick() {
         state.me.hp = clamp(state.me.hp + CONFIG.drainPerSec, CONFIG.minHp, CONFIG.maxHp);
         state.me.points += 1;
         $("battleStatus").textContent = `⚔ ${nearest.name}からHP吸収中！距離 ${d.toFixed(1)}m`;
-        if (nearest.hp <= 0) {
-          swapRolesWith(nearest);
-        }
+        if (nearest.hp <= 0) swapRolesWith(nearest);
       } else {
         state.me.hp = clamp(state.me.hp - CONFIG.drainPerSec, CONFIG.minHp, CONFIG.maxHp);
         nearest.hp = clamp(nearest.hp + CONFIG.drainPerSec, CONFIG.minHp, CONFIG.maxHp);
         $("battleStatus").textContent = `⚠ ${nearest.name}にHPを吸収されています！距離 ${d.toFixed(1)}m`;
-        if (state.me.hp <= 0) {
-          swapRolesWith(nearest);
-        }
+        if (state.me.hp <= 0) swapRolesWith(nearest);
       }
     }
   } else if (nearest) {
@@ -323,6 +366,32 @@ function gameTick() {
   }
 
   render();
+}
+
+function formatTime(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  return `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+
+function renderEventClock() {
+  const elapsed = (Date.now() - state.eventStartAt) / 1000;
+  $("eventTimer").textContent = formatTime(CONFIG.eventDurationSec - elapsed);
+}
+
+function renderStreetLevel() {
+  const n = state.participantCount;
+  let level = 1;
+  if (n >= 100) level = 5;
+  else if (n >= 60) level = 4;
+  else if (n >= 40) level = 3;
+  else if (n >= 20) level = 2;
+  const stars = "★★★★★".slice(0, level) + "☆☆☆☆☆".slice(0, 5-level);
+  $("streetLevel").textContent = stars;
+  const next = level === 1 ? 20 : level === 2 ? 40 : level === 3 ? 60 : level === 4 ? 100 : null;
+  $("streetLevelText").textContent = next ? `参加者 ${n}人 / 次まで${next-n}人` : `参加者 ${n}人 / MAX`;
 }
 
 function render() {
@@ -345,8 +414,11 @@ function render() {
   badge.className = `badge ${state.me.role === "hunter" ? "hunter" : "runner"} ${isInvincible() ? "invincible" : ""}`;
   $("roleBtn").textContent = state.me.role === "hunter" ? "🔵 ランナーにする" : "🟢 ハンターにする";
 
+  renderEventClock();
+  renderStreetLevel();
   renderShops();
   renderPlayers();
+  updateGameMap("none");
   $("log").innerHTML = state.log.map(line => `<div>${line}</div>`).join("");
 }
 
@@ -357,7 +429,7 @@ function renderShops() {
 function renderPlayers() {
   const rows = [
     `<div class="item"><strong>${state.me.role === "hunter" ? "🟢" : "🔵"} ${state.me.name}（あなた）</strong><small>HP ${Math.round(state.me.hp)} / ${CONFIG.maxHp}</small><br><small>${state.me.zone}${isInvincible() ? " / 無敵中" : ""}</small></div>`,
-    `<div class="item"><strong>β0.6ルール</strong><small>ランナーは捕まるまで継続。ハンターは最大10分。HP0で即交代。</small></div>`
+    `<div class="item"><strong>β0.7</strong><small>運営ラジオ・残り時間・状況表示・ボス・ミッション演出を追加。</small></div>`
   ].concat(state.npcs.map(p => `<div class="item"><strong>${p.role === "hunter" ? "🟢" : "🔵"} ${p.name}</strong><small>HP ${Math.round(p.hp)} / ${CONFIG.maxHp}</small><br><small>距離 ${Math.round(meters(state.me, p))}m</small></div>`));
   $("players").innerHTML = rows.join("");
 }
@@ -374,6 +446,7 @@ function move(direction) {
 }
 
 function reset() {
+  state.eventStartAt = Date.now();
   state.me.hp = CONFIG.initialHp;
   state.me.points = 0;
   state.me.role = "runner";
@@ -381,8 +454,11 @@ function reset() {
   state.me.invincibleUntil = 0;
   state.me.lat = DEFAULT_CENTER.lat;
   state.me.lng = DEFAULT_CENTER.lng;
+  state.bossActive = false;
+  state.missionActive = false;
   state.log = [];
   state.lastVibeAt = 0;
+  $("radioText").textContent = "本町・新町・お宿 Onn周辺、ゲーム開始準備中。";
   updateMePosition(state.me.lat, state.me.lng, 10, true);
   addLog("ゲームをリセットしました");
 }
@@ -392,9 +468,37 @@ function toggleMapMode() {
   $("realMap").classList.toggle("hidden", state.mapMode === "game");
   $("gameMap").classList.toggle("hidden", state.mapMode === "real");
   $("mapModeBtn").textContent = state.mapMode === "real" ? "🎮 ゲーム地図" : "🗺 現実地図";
-  if (state.mapMode === "real" && state.map) {
-    setTimeout(() => state.map.invalidateSize(), 150);
+  if (state.mapMode === "real" && state.map) setTimeout(() => state.map.invalidateSize(), 150);
+}
+
+function triggerBoss() {
+  state.bossActive = !state.bossActive;
+  if (state.bossActive) {
+    setRadio("緊急速報！新町エリアにレイドボス出現！");
+    updateBigStatus("boss-status", "👹 BOSS ACTIVE", "新町にレイドボス出現！");
+    vibrate([200,80,200,80,300]);
+  } else {
+    setRadio("レイドボスイベント終了。街は通常状態へ。");
   }
+  render();
+}
+
+function triggerMission() {
+  state.missionActive = !state.missionActive;
+  if (state.missionActive) {
+    setRadio("街ミッション発令！5分以内に本町エリアへ向かえ！");
+    updateBigStatus("mission-status", "🎯 MISSION", "本町へ向かえ！報酬あり");
+    vibrate([120,80,120]);
+  } else {
+    setRadio("街ミッション終了。次の運営速報を待て。");
+  }
+  render();
+}
+
+function triggerLive() {
+  setRadio("お宿 Onn前、LIVE SAFE発動！ライブを楽しめ！");
+  updateBigStatus("safe-status", "🎵 LIVE SAFE", "お宿 Onn前は戦闘停止");
+  vibrate([100,60,100,60,100]);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -414,8 +518,12 @@ document.addEventListener("DOMContentLoaded", () => {
   $("roleBtn").addEventListener("click", () => setRole(state.me.role === "hunter" ? "runner" : "hunter"));
   $("vibeBtn").addEventListener("click", () => { vibrate([120, 80, 120]); addLog("📳 バイブテスト"); });
   $("mapModeBtn").addEventListener("click", toggleMapMode);
+  $("bossBtn").addEventListener("click", triggerBoss);
+  $("missionBtn").addEventListener("click", triggerMission);
+  $("liveBtn").addEventListener("click", triggerLive);
 
-  addLog("STREET SURVIVAL β0.6 起動");
+  addLog("STREET SURVIVAL β0.7 起動");
   render();
   setInterval(gameTick, 1000);
+  setInterval(render, 1000);
 });

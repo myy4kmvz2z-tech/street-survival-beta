@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β6.1</title>
+  <title>STREET SURVIVAL β6.2</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β6.1</h1>
-    <p>Effects HUD 修正版 / FXが必ず見える。</p>
+    <h1>STREET SURVIVAL β6.2</h1>
+    <p>Event Sounds / イベントごとに音が変わる。</p>
   </div>
   <button id="resetBtn" class="ghost">RESET</button>
 </header>
@@ -127,6 +127,15 @@
     </div>
 
     <button id="vibeBtn" class="secondary full">🔊 演出テスト</button>
+
+    <div id="soundTestButtons" class="sound-test-buttons">
+      <button id="safeSoundBtn">🛡 SAFE音</button>
+      <button id="bossSoundBtn">👹 BOSS音</button>
+      <button id="missionSoundBtn">🎯 MISSION音</button>
+      <button id="liveSoundBtn">🎵 LIVE音</button>
+      <button id="finalSoundBtn">🔥 FINAL音</button>
+      <button id="endSoundBtn">🏆 END音</button>
+    </div>
 
     <div class="mini-status">
       <div><small>POINT</small><b id="points">0</b></div>

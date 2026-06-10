@@ -123,3 +123,16 @@ body.flash-mission::before{background:rgba(247,201,72,.30)}
 }
 body.fx-test-shake{animation:fxScreenShake .12s alternate 8}
 @keyframes fxScreenShake{from{transform:translateX(-3px)}to{transform:translateX(3px)}}
+
+
+/* β6.2 Event Sound Buttons */
+.sound-test-buttons{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
+  margin:0 0 12px;
+}
+.sound-test-buttons button{
+  padding:10px 8px;
+  font-size:12px;
+}

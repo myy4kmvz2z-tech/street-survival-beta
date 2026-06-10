@@ -17,46 +17,87 @@ function getAudioCtx(){
 function playTone(kind="notice"){
   const ctx = getAudioCtx();
   if(!ctx) return;
+
   const now = ctx.currentTime;
-  const gain = ctx.createGain();
-  gain.connect(ctx.destination);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
 
-  const osc = ctx.createOscillator();
-  osc.type = kind==="boss" || kind==="final" ? "sawtooth" : "sine";
-  const freq = {
-    safe: 660,
-    live: 880,
-    mission: 720,
-    boss: 150,
-    final: 110,
-    danger: 220,
-    notice: 520
-  }[kind] || 520;
-  osc.frequency.setValueAtTime(freq, now);
-  if(kind==="boss" || kind==="final"){
-    osc.frequency.exponentialRampToValueAtTime(freq * 0.55, now + 0.42);
-  } else {
-    osc.frequency.exponentialRampToValueAtTime(freq * 1.25, now + 0.20);
+  function tone(freq, start, dur, type="sine", volume=0.10, slideTo=null){
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now + start);
+    if(slideTo){
+      osc.frequency.exponentialRampToValueAtTime(slideTo, now + start + dur);
+    }
+    gain.gain.setValueAtTime(0.0001, now + start);
+    gain.gain.exponentialRampToValueAtTime(volume, now + start + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now + start);
+    osc.stop(now + start + dur + 0.02);
   }
-  osc.connect(gain);
-  osc.start(now);
-  osc.stop(now + 0.48);
 
-  if(kind==="final" || kind==="boss"){
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = "square";
-    osc2.frequency.setValueAtTime(kind==="final" ? 80 : 95, now);
-    gain2.gain.setValueAtTime(0.0001, now);
-    gain2.gain.exponentialRampToValueAtTime(0.06, now + 0.03);
-    gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.start(now);
-    osc2.stop(now + 0.58);
+  function noise(start, dur, volume=0.06){
+    const bufferSize = Math.floor(ctx.sampleRate * dur);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
+    const src = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(700, now + start);
+    gain.gain.setValueAtTime(volume, now + start);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+    src.buffer = buffer;
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(now + start);
+    src.stop(now + start + dur);
+  }
+
+  if(kind === "safe"){
+    // Bright heal chime: up-up
+    tone(660, 0.00, 0.18, "sine", 0.10);
+    tone(880, 0.13, 0.20, "sine", 0.10);
+    tone(1320,0.28, 0.18, "triangle", 0.07);
+  } else if(kind === "live"){
+    // Happy fanfare
+    tone(523, 0.00, 0.14, "triangle", 0.09);
+    tone(659, 0.12, 0.14, "triangle", 0.09);
+    tone(784, 0.24, 0.18, "triangle", 0.10);
+    tone(1046,0.40, 0.20, "sine", 0.08);
+  } else if(kind === "mission"){
+    // Alert but positive beeps
+    tone(720, 0.00, 0.10, "square", 0.075);
+    tone(720, 0.16, 0.10, "square", 0.075);
+    tone(960, 0.32, 0.14, "square", 0.07);
+  } else if(kind === "boss"){
+    // Low ominous hit
+    noise(0.00, 0.38, 0.08);
+    tone(150, 0.00, 0.45, "sawtooth", 0.12, 75);
+    tone(55,  0.04, 0.52, "square", 0.055, 38);
+  } else if(kind === "final"){
+    // Siren-like two-tone + rumble
+    noise(0.00, 0.70, 0.055);
+    tone(440, 0.00, 0.22, "sawtooth", 0.08, 660);
+    tone(660, 0.23, 0.22, "sawtooth", 0.08, 440);
+    tone(440, 0.46, 0.22, "sawtooth", 0.08, 660);
+    tone(80,  0.00, 0.70, "square", 0.04, 60);
+  } else if(kind === "end"){
+    // End / win sound
+    tone(523, 0.00, 0.16, "triangle", 0.09);
+    tone(659, 0.14, 0.16, "triangle", 0.09);
+    tone(784, 0.28, 0.16, "triangle", 0.09);
+    tone(1046,0.42, 0.34, "sine", 0.10);
+  } else if(kind === "danger"){
+    tone(220, 0.00, 0.16, "square", 0.08);
+    tone(180, 0.20, 0.16, "square", 0.08);
+  } else {
+    // General FX test
+    tone(520, 0.00, 0.16, "sine", 0.10);
+    tone(780, 0.16, 0.18, "sine", 0.10);
   }
 }
 function flashBody(kind){
@@ -154,5 +195,12 @@ function triggerMission(){state.missionActive=!state.missionActive;if(state.miss
 function triggerLive(){state.liveActive=true;setCityMode("LIVE");setRadio("🎵 オルタLIVE / SAFE");updateStatus("safe-mode","🎵","LIVE SAFE","お宿 Onn","戦闘停止");showFullEvent("🎵","LIVE SAFE","お宿 Onn","");showEffect("live","🎵","LIVE SAFE");vibrate([100,60,100,60,100]);render();}
 function triggerSafe(){state.liveActive=true;setCityMode("SAFE");setRadio("🛡 SAFE発動");updateStatus("safe-mode","🛡","SAFE","お宿 Onn","❤️ HP CHARGE");showFullEvent("🛡","SAFE","HP CHARGE","");showEffect("safe","🛡","SAFE");render();}
 function triggerFinal(){state.bossActive=true;state.missionActive=true;setCityMode("FINAL");setRadio("🔥 FINAL BATTLE");updateStatus("final-mode","🔥","FINAL","BATTLE","HP吸収2倍 / POINT2倍");showFullEvent("🔥","FINAL BATTLE","HP吸収2倍・POINT2倍","final");showEffect("final","🔥","FINAL BATTLE");vibrate([250,80,250,80,400]);render();}
-function triggerEnd(){state.bossActive=false;state.missionActive=false;state.liveActive=false;setCityMode("END");setRadio("🏆 GAME END");updateStatus("boss-mode","🏆","GAME END","お疲れさまでした","お宿 Onn前へ");showFullEvent("🏆","GAME END","お疲れさまでした","");showEffect("mission","🏆","GAME END");vibrate([120,80,120,80,300]);render();}
-document.addEventListener("DOMContentLoaded",()=>{initMap();document.querySelectorAll("[data-move]").forEach(btn=>btn.addEventListener("click",()=>move(btn.dataset.move)));window.addEventListener("keydown",e=>{if(e.key==="ArrowUp")move("up");if(e.key==="ArrowDown")move("down");if(e.key==="ArrowLeft")move("left");if(e.key==="ArrowRight")move("right");});$("gpsBtn").addEventListener("click",startGps);$("resetBtn").addEventListener("click",reset);$("roleBtn").addEventListener("click",()=>setRole(state.me.role==="hunter"?"runner":"hunter"));$("menuBtn").addEventListener("click",()=>{$("menuPanel").open=!$("menuPanel").open;});if($("effectBtn")) $("effectBtn").addEventListener("click",()=>{showEffect("notice","🔊","FX TEST");addLog("🔊 FX TEST");});$("vibeBtn").addEventListener("click",()=>{showEffect("notice","🔊","FX TEST");vibrate([120,80,120]);addLog("🔊 FX TEST");});$("mapModeBtn").addEventListener("click",cycleViewMode);$("normalBtn").addEventListener("click",normalMode);$("alertBtn").addEventListener("click",alertMode);$("bossBtn").addEventListener("click",triggerBoss);$("missionBtn").addEventListener("click",triggerMission);$("liveBtn").addEventListener("click",triggerLive);$("safeBtn").addEventListener("click",triggerSafe);$("finalBtn").addEventListener("click",triggerFinal);$("endBtn").addEventListener("click",triggerEnd);addLog("STREET SURVIVAL β5.0 起動");render();setInterval(gameTick,1000);setInterval(render,1000);});
+function triggerEnd(){state.bossActive=false;state.missionActive=false;state.liveActive=false;setCityMode("END");setRadio("🏆 GAME END");updateStatus("boss-mode","🏆","GAME END","お疲れさまでした","お宿 Onn前へ");showFullEvent("🏆","GAME END","お疲れさまでした","");showEffect("end","🏆","GAME END");vibrate([120,80,120,80,300]);render();}
+document.addEventListener("DOMContentLoaded",()=>{initMap();document.querySelectorAll("[data-move]").forEach(btn=>btn.addEventListener("click",()=>move(btn.dataset.move)));window.addEventListener("keydown",e=>{if(e.key==="ArrowUp")move("up");if(e.key==="ArrowDown")move("down");if(e.key==="ArrowLeft")move("left");if(e.key==="ArrowRight")move("right");});$("gpsBtn").addEventListener("click",startGps);$("resetBtn").addEventListener("click",reset);$("roleBtn").addEventListener("click",()=>setRole(state.me.role==="hunter"?"runner":"hunter"));$("menuBtn").addEventListener("click",()=>{$("menuPanel").open=!$("menuPanel").open;});if($("effectBtn")) $("effectBtn").addEventListener("click",()=>{showEffect("notice","🔊","FX TEST");addLog("🔊 FX TEST");});$("vibeBtn").addEventListener("click",()=>{showEffect("notice","🔊","FX TEST");vibrate([120,80,120]);addLog("🔊 FX TEST");});
+if($("safeSoundBtn")) $("safeSoundBtn").addEventListener("click",()=>{showEffect("safe","🛡","SAFE SOUND");addLog("🛡 SAFE SOUND");});
+if($("bossSoundBtn")) $("bossSoundBtn").addEventListener("click",()=>{showEffect("boss","👹","BOSS SOUND");addLog("👹 BOSS SOUND");});
+if($("missionSoundBtn")) $("missionSoundBtn").addEventListener("click",()=>{showEffect("mission","🎯","MISSION SOUND");addLog("🎯 MISSION SOUND");});
+if($("liveSoundBtn")) $("liveSoundBtn").addEventListener("click",()=>{showEffect("live","🎵","LIVE SOUND");addLog("🎵 LIVE SOUND");});
+if($("finalSoundBtn")) $("finalSoundBtn").addEventListener("click",()=>{showEffect("final","🔥","FINAL SOUND");addLog("🔥 FINAL SOUND");});
+if($("endSoundBtn")) $("endSoundBtn").addEventListener("click",()=>{showEffect("end","🏆","END SOUND");addLog("🏆 END SOUND");});
+$("mapModeBtn").addEventListener("click",cycleViewMode);$("normalBtn").addEventListener("click",normalMode);$("alertBtn").addEventListener("click",alertMode);$("bossBtn").addEventListener("click",triggerBoss);$("missionBtn").addEventListener("click",triggerMission);$("liveBtn").addEventListener("click",triggerLive);$("safeBtn").addEventListener("click",triggerSafe);$("finalBtn").addEventListener("click",triggerFinal);$("endBtn").addEventListener("click",triggerEnd);addLog("STREET SURVIVAL β5.0 起動");render();setInterval(gameTick,1000);setInterval(render,1000);});

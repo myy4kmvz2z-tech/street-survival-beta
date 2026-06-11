@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>STREET SURVIVAL β10.2</title>
+  <title>STREET SURVIVAL β10.3</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="style.css"/>
   <link rel="manifest" href="manifest.webmanifest">
@@ -12,8 +12,8 @@
 <body>
 <header class="top-header">
   <div>
-    <h1>STREET SURVIVAL β10.2</h1>
-    <p>PLAYER MODE / Push Once Fix / 通知暴走停止版。</p>
+    <h1>STREET SURVIVAL β10.3</h1>
+    <p>PLAYER MODE / Ops Stable / 本番運営安定版。</p>
   </div>
   <button id="resetBtn" class="ghost">RESET</button>
 </header>
@@ -39,6 +39,12 @@
 </div>
 
 <main class="hud">
+  <section class="ops-panel" id="opsPanel">
+    <div><span>📶 通信</span><b id="connectionStatus">確認中</b></div>
+    <div><span>🔋 省電力</span><b id="batteryStatus">ON</b></div>
+    <div><span>🧹 整理</span><b id="cleanupStatus">待機</b></div>
+  </section>
+
   <div class="light-mode-note">β10.0 Cleanup / 六斎市実戦軽量版</div>
   <section class="notify-panel" id="notifyPanel">
     <button id="notifyBtn" class="notify-btn">🔔 通知を許可</button>

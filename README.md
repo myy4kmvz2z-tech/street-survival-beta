@@ -1,20 +1,26 @@
-# STREET SURVIVAL β10.2 Push Once Fix
+# STREET SURVIVAL β10.3 Ops Stable / 本番運営安定版
 
-## 修正内容
+7/5(日) 六斎市など本番運営向けの安定化版です。
 
-プッシュ通知がずっと来る問題を修正しました。
+## 追加内容
 
-## 原因
+- 📊 運営ログ整理
+- 🔋 バッテリー消費削減
+- 📱 iPhone安定化
+- 🔄 通信切断時の自動復帰
+- 🧹 古いデータ自動削除
+- 📶 通信状態表示
+- 🔋 省電力状態表示
+- 🧹 整理状態表示
 
-Firebaseの `currentCommand` が残っているため、
-ページ更新・再接続・Firebase再読込のたびに同じ命令を再通知していました。
+## 残した機能
 
-## 修正
-
-- 同じ command id は1回だけ通知
-- 10分以上古い命令は通知しない
-- 通知済みidを localStorage に保存
-- Firebase / BOSS / LIVE / RADIO / SAFE / GPS は維持
+- Firebaseリアルタイム受信
+- プッシュ通知
+- BOSS / LIVE / RADIO / ALERT / SAFE / FINAL
+- GPS / RADAR
+- HP / SAFE CHARGE
+- ログ
 
 ## アップロードするファイル
 
@@ -32,4 +38,4 @@ Firebaseの `currentCommand` が残っているため、
 
 ## 開くURL
 
-https://myy4kmvz2z-tech.github.io/street-survival-beta/?v=102
+https://myy4kmvz2z-tech.github.io/street-survival-beta/?v=103

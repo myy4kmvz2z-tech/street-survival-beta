@@ -450,3 +450,50 @@ body.flash-mission::before{
 .push-toast{
   max-width:92vw;
 }
+
+
+/* β10.3 Ops Stable / 本番運営安定版 */
+.ops-panel{
+  width:min(92vw,760px);
+  margin:8px auto 10px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+.ops-panel div{
+  background:linear-gradient(180deg,#111820,#090d12);
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:14px;
+  padding:9px 8px;
+  text-align:center;
+  box-shadow:0 0 14px rgba(0,0,0,.22);
+}
+.ops-panel span{
+  display:block;
+  color:#aeb4bb;
+  font-size:11px;
+  font-weight:900;
+}
+.ops-panel b{
+  display:block;
+  margin-top:3px;
+  color:#f7c948;
+  font-size:13px;
+}
+.ops-panel b.ok{color:#59d68d}
+.ops-panel b.warn{color:#f7c948}
+.ops-panel b.err{color:#ff6b6b}
+#log{
+  max-height:130px !important;
+  overflow:auto !important;
+  font-size:12px !important;
+}
+body.low-power .radar-sweep{
+  animation-duration:5s !important;
+}
+body.low-power .radar-dot{
+  transition:none !important;
+}
+body.low-power *{
+  scroll-behavior:auto !important;
+}

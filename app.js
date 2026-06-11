@@ -831,3 +831,221 @@ window.addEventListener("load", ()=>{
     if(typeof addLog === "function") addLog("📊 β10.3 本番運営安定化 起動");
   }, 1200);
 });
+/* =========================================================
+   STREET SURVIVAL PLAYER FIREBASE FINAL FIX
+   参加者側 Firebase 受信・通知・デモ表示 修正版
+   app.js の一番下に丸ごと追加
+========================================================= */
+
+console.log("STREET SURVIVAL: PLAYER FINAL FIX LOADED");
+
+let SS_FINAL_DB = null;
+let SS_FINAL_LAST_COMMAND_ID = null;
+let SS_FINAL_INIT_DONE = false;
+
+function ssFinalSetFirebaseStatus(text, cls) {
+  const el = document.getElementById("firebaseStatus");
+  if (!el) return;
+  el.textContent = text;
+  el.className = "firebase-status " + (cls || "");
+}
+
+function ssFinalAddLog(text) {
+  if (typeof addLog === "function") {
+    addLog(text);
+  } else {
+    console.log(text);
+  }
+}
+
+function ssFinalLoadScript(src) {
+  return new Promise((resolve, reject) => {
+    const exists = Array.from(document.scripts).some(s => s.src.includes(src));
+    if (exists) {
+      resolve();
+      return;
+    }
+
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("読み込み失敗: " + src));
+    document.head.appendChild(s);
+  });
+}
+
+/* 通知バグ修正：自分自身を呼ばない */
+window.ssNotifyCommandOnce = function(cmd) {
+  try {
+    if (typeof ssShouldNotifyCommand === "function") {
+      if (!ssShouldNotifyCommand(cmd)) return;
+    }
+
+    if (typeof notifyStreetSurvivalCommand === "function") {
+      notifyStreetSurvivalCommand(cmd);
+    }
+  } catch (e) {
+    console.error("notify fixed error", e);
+  }
+};
+
+function ssFinalReceiveRadio(message) {
+  try {
+    if (typeof receiveRadio === "function") {
+      receiveRadio(message || "運営速報");
+      return;
+    }
+
+    if (typeof setRadio === "function") {
+      setRadio(message || "運営速報");
+      return;
+    }
+
+    const radio = document.getElementById("radioTicker");
+    if (radio) radio.textContent = "📻 " + (message || "運営速報");
+  } catch (e) {
+    console.error("radio receive error", e);
+  }
+}
+
+function ssFinalApplyCommand(cmd) {
+  try {
+    if (!cmd || !cmd.type) return;
+
+    const commandId = cmd.id || cmd.type + "_" + (cmd.time || cmd.at || cmd.message || "");
+    if (commandId && commandId === SS_FINAL_LAST_COMMAND_ID) return;
+    SS_FINAL_LAST_COMMAND_ID = commandId;
+
+    if (typeof ssOpsMarkFirebaseSeen === "function") {
+      ssOpsMarkFirebaseSeen();
+    }
+
+    console.log("STREET SURVIVAL Firebase command:", cmd);
+    ssFinalAddLog("🔥 Firebase受信: " + cmd.type);
+
+    if (cmd.type === "RADIO") {
+      ssFinalReceiveRadio(cmd.message || "運営速報");
+    }
+
+    if (cmd.type === "NORMAL" && typeof normalMode === "function") {
+      normalMode();
+    }
+
+    if (cmd.type === "ALERT") {
+      if (typeof hardAlertEffect === "function") {
+        hardAlertEffect(cmd.message || "⚠️ 警戒モード発令！");
+      } else if (typeof alertMode === "function") {
+        alertMode();
+      }
+    }
+
+    if (cmd.type === "BOSS" && typeof triggerBoss === "function") {
+      triggerBoss();
+    }
+
+    if (cmd.type === "MISSION" && typeof triggerMission === "function") {
+      triggerMission();
+    }
+
+    if (cmd.type === "LIVE" && typeof triggerLive === "function") {
+      triggerLive();
+    }
+
+    if (cmd.type === "SAFE" && typeof triggerSafe === "function") {
+      triggerSafe();
+    }
+
+    if (cmd.type === "FINAL" && typeof triggerFinal === "function") {
+      triggerFinal();
+    }
+
+    if (cmd.type === "END" && typeof triggerEnd === "function") {
+      triggerEnd();
+    }
+
+    if (typeof window.ssNotifyCommandOnce === "function") {
+      window.ssNotifyCommandOnce(cmd);
+    }
+
+    if (typeof render === "function") {
+      render();
+    }
+  } catch (e) {
+    console.error("command apply error", e);
+    ssFinalSetFirebaseStatus("🔥 Firebase: 受信エラー", "error");
+    ssFinalAddLog("🔥 Firebase受信エラー: " + e.message);
+  }
+}
+
+async function ssFinalInitFirebasePlayer() {
+  try {
+    if (SS_FINAL_INIT_DONE) return;
+    SS_FINAL_INIT_DONE = true;
+
+    ssFinalSetFirebaseStatus("🔥 Firebase: 確認中", "demo");
+
+    console.log("Firebase flag:", window.STREET_SURVIVAL_FIREBASE_ENABLED);
+    console.log("Firebase config:", window.STREET_SURVIVAL_FIREBASE_CONFIG);
+
+    if (window.STREET_SURVIVAL_FIREBASE_ENABLED !== true) {
+      ssFinalSetFirebaseStatus("🔥 Firebase: OFF / config未読込", "demo");
+      ssFinalAddLog("🔥 Firebase OFF / config未読込");
+      return;
+    }
+
+    if (
+      !window.STREET_SURVIVAL_FIREBASE_CONFIG ||
+      !window.STREET_SURVIVAL_FIREBASE_CONFIG.apiKey ||
+      !window.STREET_SURVIVAL_FIREBASE_CONFIG.databaseURL
+    ) {
+      ssFinalSetFirebaseStatus("🔥 Firebase: config空", "error");
+      ssFinalAddLog("🔥 Firebase config空");
+      return;
+    }
+
+    ssFinalSetFirebaseStatus("🔥 Firebase: 本体読込中", "demo");
+
+    await ssFinalLoadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
+    await ssFinalLoadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js");
+
+    if (!window.firebase) {
+      ssFinalSetFirebaseStatus("🔥 Firebase: 本体未読込", "error");
+      ssFinalAddLog("🔥 Firebase本体未読込");
+      return;
+    }
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(window.STREET_SURVIVAL_FIREBASE_CONFIG);
+    }
+
+    SS_FINAL_DB = firebase.database();
+
+    ssFinalSetFirebaseStatus("🔥 Firebase: 接続中", "connected");
+    ssFinalAddLog("🔥 Firebase PLAYER 接続OK");
+
+    SS_FINAL_DB.ref("streetSurvival/currentCommand").on("value", snap => {
+      const cmd = snap.val();
+      if (!cmd) return;
+      ssFinalApplyCommand(cmd);
+    });
+
+    if (typeof ssOpsMarkFirebaseSeen === "function") {
+      ssOpsMarkFirebaseSeen();
+    }
+
+  } catch (e) {
+    console.error("Firebase final init error", e);
+    ssFinalSetFirebaseStatus("🔥 Firebase: エラー", "error");
+    ssFinalAddLog("🔥 Firebase接続エラー: " + e.message);
+  }
+}
+
+/* 古い initFirebasePlayer を最後から上書き */
+window.initFirebasePlayer = ssFinalInitFirebasePlayer;
+
+/* 起動 */
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    ssFinalInitFirebasePlayer();
+  }, 800);
+});

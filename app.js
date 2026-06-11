@@ -1049,3 +1049,67 @@ window.addEventListener("load", () => {
     ssFinalInitFirebasePlayer();
   }, 800);
 });
+/* =========================================================
+   STREET SURVIVAL AUDIO UNLOCK FIX v28
+   iPhone / Safari 音声ロック解除
+========================================================= */
+
+let SS_AUDIO_UNLOCKED = false;
+
+function ssUnlockAudioV28() {
+  try {
+    if (typeof getAudioCtx !== "function") {
+      console.log("getAudioCtx not found");
+      return;
+    }
+
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.03);
+
+    SS_AUDIO_UNLOCKED = true;
+
+    const status = document.getElementById("notifyStatus");
+    if (status) status.textContent = "通知: 確認済み / 音: ON";
+
+    if (typeof addLog === "function") {
+      addLog("🔊 音声ON");
+    }
+
+    console.log("STREET SURVIVAL: AUDIO UNLOCKED v28");
+  } catch (e) {
+    console.error("audio unlock error", e);
+  }
+}
+
+window.addEventListener("DOMContentLoaded", function () {
+  const btn = document.getElementById("audioUnlockBtn");
+
+  if (btn) {
+    btn.addEventListener("click", function () {
+      ssUnlockAudioV28();
+
+      if (typeof showEffect === "function") {
+        showEffect("notice", "🔊", "SOUND ON", true);
+      }
+    });
+  }
+
+  document.body.addEventListener("touchstart", ssUnlockAudioV28, { once: true });
+  document.body.addEventListener("click", ssUnlockAudioV28, { once: true });
+});

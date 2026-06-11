@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>STREET SURVIVAL β10.3</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#07090c">
+</head>
+<body>
+<header class="top-header">
+  <div>
+    <h1>STREET SURVIVAL β10.3</h1>
+    <p>PLAYER MODE / Ops Stable / 本番運営安定版。</p>
+  </div>
+  <button id="resetBtn" class="ghost">RESET</button>
+</header>
+
+<div id="fullScreenEvent" class="full-screen-event hidden">
+  <div id="fullEventIcon">🔥</div>
+  <strong id="fullEventTitle">FINAL BATTLE</strong>
+  <span id="fullEventSub">HP吸収2倍・ポイント2倍</span>
+</div>
+
+<div id="effectOverlay" class="effect-overlay hidden">
+  <div id="effectIcon">⚡</div>
+  <strong id="effectText">EFFECT</strong>
+</div>
+
+<div id="fxToast" class="fx-toast hidden">🔊 FX TEST</div>
+
+<div id="firebaseStatus" class="firebase-status">🔥 Firebase: 未設定</div>
+
+<div id="radioPopup" class="radio-popup hidden">
+  <div>📻 STREET RADIO</div>
+  <strong id="radioPopupText">本町で戦闘発生！</strong>
+</div>
+
+<main class="hud">
+  <section class="ops-panel" id="opsPanel">
+    <div><span>📶 通信</span><b id="connectionStatus">確認中</b></div>
+    <div><span>🔋 省電力</span><b id="batteryStatus">ON</b></div>
+    <div><span>🧹 整理</span><b id="cleanupStatus">待機</b></div>
+  </section>
+
+  <div class="light-mode-note">β10.0 Cleanup / 六斎市実戦軽量版</div>
+  <section class="notify-panel" id="notifyPanel">
+    <button id="notifyBtn" class="notify-btn">🔔 通知を許可</button>
+    <span id="notifyStatus">通知: 未確認</span>
+  </section>
+
+
+  <section id="statusPanel" class="status-panel runner-mode">
+    <div class="player-row">
+      <input id="playerName" value="RED"/>
+      <span id="roleBadge" class="badge runner">RUNNER</span>
+    </div>
+
+    <div id="statusIcon" class="status-icon">🔵</div>
+    <div id="statusTitle" class="status-title">RUNNER</div>
+    <div id="statusSub" class="status-sub">🏃 生存中</div>
+    <div id="statusNote" class="status-note">👀 気配なし</div>
+
+    <div class="hud-stats">
+      <div><span>❤️</span><b id="hpText">100/300</b></div>
+      <div><span>👥</span><b id="totalPlayers">18</b></div>
+      <div><span>🔥</span><b id="cityModeMini">NORMAL</b></div>
+      <div><span>⏰</span><b id="eventTimer">6:00</b></div>
+    </div>
+
+    <div class="hp-line">
+      <div id="hpBar" class="hp-fill"></div>
+      <div id="chargeFloat" class="charge-float hidden">❤️ +2</div>
+    </div>
+  </section>
+
+  <section class="scanner-section">
+    <div class="scanner-head">
+      <h2 id="modeTitle">🛰 RADAR</h2>
+      <button id="mapModeBtn" class="mini">🗺 MAP</button>
+    </div>
+
+    <div id="radar" class="radar">
+      <div class="radar-grid"></div>
+      <div class="radar-ring r1"></div>
+      <div class="radar-ring r2"></div>
+      <div class="radar-ring r3"></div>
+      <div class="radar-cross h"></div>
+      <div class="radar-cross v"></div>
+      <div id="radarSweep" class="radar-sweep"></div>
+
+      <div id="radarYou" class="radar-dot you">🔵<span>YOU</span></div>
+      <div id="radarOnn" class="radar-dot live">🎵<span>LIVE</span></div>
+      <div id="radarCoffee" class="radar-dot hp">☕<span>HP</span></div>
+      <div id="radarFood" class="radar-dot hp">🍜<span>HP</span></div>
+      <div id="radarHonmachi" class="radar-dot area yellow">🟡<span>本町</span></div>
+      <div id="radarShinmachi" class="radar-dot area red">🔴<span>新町</span></div>
+      <div id="radarBoss" class="radar-dot boss hidden">👹<span>BOSS</span></div>
+      <div id="radarMission" class="radar-dot mission hidden">🎯<span>MISSION</span></div>
+      <div id="radarHunter" class="radar-dot hunter-dot hidden">🔴<span>HUNTER</span></div>
+
+      <div id="radarWarning" class="warning hidden">WARNING</div>
+      <div id="safePulse" class="safe-pulse hidden">SAFE</div>
+    </div>
+
+    <div id="gameMap" class="game-map hidden">
+      <div class="zone-label zone-onn">🎵 Onn<br><small>SAFE</small></div>
+      <div class="zone-label zone-honmachi">🟡 本町</div>
+      <div class="zone-label zone-shinmachi">🔴 新町</div>
+      <div class="map-icon player">🔵<span>YOU</span></div>
+      <div class="map-icon spot coffee">☕<span>HP</span></div>
+      <div class="map-icon spot ramen">🍜<span>HP</span></div>
+      <div class="map-icon spot onn">🎵<span>LIVE</span></div>
+      <div id="gameBoss" class="map-icon boss hidden">👹<span>BOSS</span></div>
+      <div id="gameMission" class="map-icon mission hidden">🎯<span>MISSION</span></div>
+      <div class="street-line line-a"></div>
+      <div class="street-line line-b"></div>
+      <div class="street-line line-c"></div>
+    </div>
+
+    <div id="realMap" class="real-map hidden"></div>
+
+    <div class="scanner-caption">
+      <span id="radarRange">RANGE 100m</span>
+      <span id="radarHint">RADAR / GAME / REAL</span>
+    </div>
+  </section>
+
+  <div id="radioTicker" class="radio-ticker">📻 ゲーム開始 ｜ 👹 BOSS ｜ 🎯 本町集合 ｜ 🎵 LIVE SAFE</div>
+
+  <section class="action-row">
+    <button id="gpsBtn" class="secondary">📍 GPS</button>
+    <button id="roleBtn" class="primary">🟢 ACTION</button>
+    <button id="effectBtn" class="secondary" onclick="showEffect('notice','🔊','FX TEST');">🔊 FX</button>
+    <button id="menuBtn" class="secondary">⚙ MENU</button>
+  </section>
+
+  <details id="menuPanel" class="menu-panel">
+    <summary>⚙ PLAYER MENU</summary>
+
+    <div class="move-controls">
+      <button data-move="up">↑</button>
+      <button data-move="left">←</button>
+      <button data-move="down">↓</button>
+      <button data-move="right">→</button>
+    </div>
+
+    <button id="vibeBtn" class="secondary full">🔊 演出テスト</button>
+
+    <div id="soundTestButtons" class="sound-test-buttons">
+      <button id="safeSoundBtn">🛡 SAFE音</button>
+      <button id="bossSoundBtn">👹 BOSS音</button>
+      <button id="missionSoundBtn">🎯 MISSION音</button>
+      <button id="liveSoundBtn">🎵 LIVE音</button>
+      <button id="finalSoundBtn">🔥 FINAL音</button>
+      <button id="endSoundBtn">🏆 END音</button>
+    </div>
+
+    <div class="mini-status">
+      <div><small>POINT</small><b id="points">0</b></div>
+      <div><small>HUNTER</small><b id="hunterTimer">-</b></div>
+      <div><small>ZONE</small><b id="zoneState">FIELD</b></div>
+    </div>
+
+    <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
+    <p id="battleStatus" class="notice">現在：通常エリア</p>
+    <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで位置情報を許可してください。</p>
+  </details>
+  <details class="sub-panel">
+    <summary>🌆 街ステータス / ログ</summary>
+    <div class="player-counts">
+      <strong id="totalPlayersFull">18人参加中</strong>
+      <div class="count-row"><span>🟢 HUNTER</span><b id="hunterCount">5</b></div>
+      <div class="count-row"><span>🔵 RUNNER</span><b id="runnerCount">13</b></div>
+      <div class="count-row"><span>👹 BOSS</span><b id="bossCount">0</b></div>
+      <div class="count-row"><span>🎯 MISSION</span><b id="missionCount">0</b></div>
+      <div class="count-row"><span>🛡 SAFE</span><b id="safeCount">4</b></div>
+    </div>
+    <div id="players" class="player-list"></div>
+    <div id="log" class="log"></div>
+  </details>
+
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="firebase-config-live.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

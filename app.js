@@ -1528,3 +1528,245 @@ window.addEventListener("load", () => {
     }
   }, 3000);
 });
+/* =========================================================
+   STREET SURVIVAL REALTIME HP DRAIN v34
+   本物の参加者同士 7m以内 HP吸収
+========================================================= */
+
+let SS_REAL_HP_DRAIN_READY_V34 = true;
+let SS_REAL_HP_LAST_DRAIN_AT_V34 = 0;
+const SS_REAL_HP_DRAIN_INTERVAL_V34 = 1000;
+const SS_REAL_HP_RANGE_M_V34 = 7;
+
+function ssRealHpLogV34(text) {
+  if (typeof addLog === "function") {
+    addLog(text);
+  } else {
+    console.log(text);
+  }
+}
+
+function ssRealHpGetActiveOthersV34() {
+  try {
+    if (!SS_PLAYER_ID_V30) return [];
+
+    const all = SS_REMOTE_PLAYERS_V30 || {};
+    return Object.values(all).filter(p => {
+      if (!p) return false;
+      if (p.id === SS_PLAYER_ID_V30) return false;
+      if (!p.online) return false;
+      if (!p.lat || !p.lng) return false;
+      if (Date.now() - Number(p.lastSeen || 0) > 60000) return false;
+      return true;
+    });
+  } catch (e) {
+    console.error("v34 get active others error", e);
+    return [];
+  }
+}
+
+function ssRealHpCanBattleV34(me, other) {
+  if (!me || !other) return false;
+  if (!me.role || !other.role) return false;
+  if (me.role === other.role) return false;
+
+  const roles = [me.role, other.role];
+  return roles.includes("hunter") && roles.includes("runner");
+}
+
+function ssRealHpApplyLocalRoleSwapV34(newRole) {
+  try {
+    if (!state || !state.me) return;
+
+    state.me.role = newRole;
+    state.me.hp = CONFIG.initialHp;
+    state.me.hunterEndsAt = newRole === "hunter"
+      ? Date.now() + CONFIG.hunterMaxSec * 1000
+      : null;
+    state.me.invincibleUntil = Date.now() + CONFIG.invincibleSec * 1000;
+
+    if (typeof render === "function") render();
+  } catch (e) {
+    console.error("v34 local role swap error", e);
+  }
+}
+
+async function ssRealHpDrainTickV34() {
+  try {
+    if (!SS_REAL_HP_DRAIN_READY_V34) return;
+    if (!SS_PLAYER_ID_V30) return;
+    if (!SS_PLAYERS_REF_V30) return;
+    if (!state || !state.me) return;
+
+    const now = Date.now();
+    if (now - SS_REAL_HP_LAST_DRAIN_AT_V34 < SS_REAL_HP_DRAIN_INTERVAL_V34) return;
+
+    const others = ssRealHpGetActiveOthersV34();
+    if (!others.length) return;
+
+    const meData = {
+      id: SS_PLAYER_ID_V30,
+      name: ssGetPlayerNameV30(),
+      role: state.me.role || "runner",
+      hp: Math.round(state.me.hp || 0),
+      points: Math.round(state.me.points || 0),
+      lat: state.me.lat,
+      lng: state.me.lng,
+      zone: state.me.zone || "FIELD"
+    };
+
+    let target = null;
+    let targetDistance = 9999;
+
+    for (const p of others) {
+      if (!ssRealHpCanBattleV34(meData, p)) continue;
+
+      const d = typeof meters === "function"
+        ? meters(state.me, { lat: p.lat, lng: p.lng })
+        : 9999;
+
+      if (d <= SS_REAL_HP_RANGE_M_V34 && d < targetDistance) {
+        target = p;
+        targetDistance = d;
+      }
+    }
+
+    if (!target) return;
+
+    SS_REAL_HP_LAST_DRAIN_AT_V34 = now;
+
+    const drain = state.cityMode === "FINAL"
+      ? CONFIG.drainPerSec * 2
+      : CONFIG.drainPerSec;
+
+    const myRef = SS_PLAYERS_REF_V30.child(SS_PLAYER_ID_V30);
+    const targetRef = SS_PLAYERS_REF_V30.child(target.id);
+
+    let myNewHp = Math.round(meData.hp);
+    let targetNewHp = Math.round(target.hp || 0);
+    let myNewPoints = Math.round(meData.points || 0);
+
+    if (meData.role === "hunter" && target.role === "runner") {
+      targetNewHp = clamp(targetNewHp - drain, CONFIG.minHp, CONFIG.maxHp);
+      myNewHp = clamp(myNewHp + drain, CONFIG.minHp, CONFIG.maxHp);
+      myNewPoints += drain;
+
+      state.me.hp = myNewHp;
+      state.me.points = myNewPoints;
+
+      if (typeof showEffect === "function") {
+        showEffect("danger", "⚔", "吸収中", false);
+      }
+
+      if (targetNewHp <= 0) {
+        targetNewHp = CONFIG.initialHp;
+        myNewHp = CONFIG.initialHp;
+
+        await targetRef.update({
+          hp: targetNewHp,
+          role: "hunter",
+          hunterEndsAt: Date.now() + CONFIG.hunterMaxSec * 1000,
+          invincibleUntil: Date.now() + CONFIG.invincibleSec * 1000,
+          lastBattleAt: Date.now(),
+          lastBattleBy: SS_PLAYER_ID_V30
+        });
+
+        await myRef.update({
+          hp: myNewHp,
+          points: myNewPoints,
+          role: "runner",
+          hunterEndsAt: null,
+          invincibleUntil: Date.now() + CONFIG.invincibleSec * 1000,
+          lastBattleAt: Date.now(),
+          lastBattleTarget: target.id
+        });
+
+        ssRealHpApplyLocalRoleSwapV34("runner");
+        ssRealHpLogV34("🔄 リアルHP0：役割交代！");
+        return;
+      }
+
+      await targetRef.update({
+        hp: targetNewHp,
+        lastBattleAt: Date.now(),
+        lastBattleBy: SS_PLAYER_ID_V30
+      });
+
+      await myRef.update({
+        hp: myNewHp,
+        points: myNewPoints,
+        lastBattleAt: Date.now(),
+        lastBattleTarget: target.id
+      });
+
+      ssRealHpLogV34(`⚔ ${target.name || "PLAYER"} からHP吸収 ${Math.round(targetDistance)}m`);
+    }
+
+    if (meData.role === "runner" && target.role === "hunter") {
+      myNewHp = clamp(myNewHp - drain, CONFIG.minHp, CONFIG.maxHp);
+      targetNewHp = clamp(targetNewHp + drain, CONFIG.minHp, CONFIG.maxHp);
+
+      state.me.hp = myNewHp;
+
+      if (typeof showEffect === "function") {
+        showEffect("danger", "⚠", "吸収されてます", false);
+      }
+
+      if (myNewHp <= 0) {
+        myNewHp = CONFIG.initialHp;
+        targetNewHp = CONFIG.initialHp;
+
+        await myRef.update({
+          hp: myNewHp,
+          role: "hunter",
+          hunterEndsAt: Date.now() + CONFIG.hunterMaxSec * 1000,
+          invincibleUntil: Date.now() + CONFIG.invincibleSec * 1000,
+          lastBattleAt: Date.now(),
+          lastBattleBy: target.id
+        });
+
+        await targetRef.update({
+          hp: targetNewHp,
+          role: "runner",
+          hunterEndsAt: null,
+          invincibleUntil: Date.now() + CONFIG.invincibleSec * 1000,
+          lastBattleAt: Date.now(),
+          lastBattleTarget: SS_PLAYER_ID_V30
+        });
+
+        ssRealHpApplyLocalRoleSwapV34("hunter");
+        ssRealHpLogV34("🔄 リアルHP0：役割交代！");
+        return;
+      }
+
+      await myRef.update({
+        hp: myNewHp,
+        lastBattleAt: Date.now(),
+        lastBattleBy: target.id
+      });
+
+      await targetRef.update({
+        hp: targetNewHp,
+        lastBattleAt: Date.now(),
+        lastBattleTarget: SS_PLAYER_ID_V30
+      });
+
+      ssRealHpLogV34(`⚠ ${target.name || "HUNTER"} にHP吸収されています ${Math.round(targetDistance)}m`);
+    }
+
+    if (typeof render === "function") render();
+  } catch (e) {
+    console.error("v34 realtime hp drain error", e);
+    ssRealHpLogV34("⚠ v34 HP吸収エラー: " + e.message);
+  }
+}
+
+setInterval(() => {
+  ssRealHpDrainTickV34();
+}, 500);
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    ssRealHpLogV34("⚔ v34 リアルHP吸収 起動");
+  }, 4000);
+});

@@ -1049,3 +1049,115 @@ window.addEventListener("load", () => {
     ssFinalInitFirebasePlayer();
   }, 800);
 });
+/* =========================================================
+   STREET SURVIVAL AUDIO TOGGLE FIX v29
+   iPhone / Safari 音声ON/OFF切替
+========================================================= */
+
+let SS_AUDIO_UNLOCKED = false;
+let SS_AUDIO_MUTED = false;
+
+function ssSetAudioStatusV29() {
+  const status = document.getElementById("notifyStatus");
+  const btn = document.getElementById("audioUnlockBtn");
+
+  if (SS_AUDIO_MUTED) {
+    if (status) status.textContent = "通知: 確認済み / 音: OFF";
+    if (btn) btn.textContent = "🔊 音ON";
+  } else if (SS_AUDIO_UNLOCKED) {
+    if (status) status.textContent = "通知: 確認済み / 音: ON";
+    if (btn) btn.textContent = "🔇 音OFF";
+  } else {
+    if (status) status.textContent = "通知: 未確認 / 音: 未ON";
+    if (btn) btn.textContent = "🔊 音ON";
+  }
+}
+
+function ssUnlockAudioV29() {
+  try {
+    if (typeof getAudioCtx !== "function") {
+      console.log("getAudioCtx not found");
+      return;
+    }
+
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.03);
+
+    SS_AUDIO_UNLOCKED = true;
+    SS_AUDIO_MUTED = false;
+
+    ssSetAudioStatusV29();
+
+    if (typeof addLog === "function") {
+      addLog("🔊 音声ON");
+    }
+
+    console.log("STREET SURVIVAL: AUDIO ON v29");
+  } catch (e) {
+    console.error("audio unlock error", e);
+  }
+}
+
+function ssToggleAudioV29() {
+  if (!SS_AUDIO_UNLOCKED) {
+    ssUnlockAudioV29();
+
+    if (typeof showEffect === "function") {
+      showEffect("notice", "🔊", "SOUND ON", true);
+    }
+
+    return;
+  }
+
+  SS_AUDIO_MUTED = !SS_AUDIO_MUTED;
+  ssSetAudioStatusV29();
+
+  if (typeof addLog === "function") {
+    addLog(SS_AUDIO_MUTED ? "🔇 音声OFF" : "🔊 音声ON");
+  }
+
+  if (!SS_AUDIO_MUTED && typeof showEffect === "function") {
+    showEffect("notice", "🔊", "SOUND ON", true);
+  }
+}
+
+/* playTone を上書きして、音OFF時は鳴らさない */
+const ssOriginalPlayToneV29 = typeof playTone === "function" ? playTone : null;
+
+if (ssOriginalPlayToneV29) {
+  window.playTone = function(kind) {
+    if (SS_AUDIO_MUTED) {
+      console.log("STREET SURVIVAL: audio muted, skip tone:", kind);
+      return;
+    }
+    ssOriginalPlayToneV29(kind);
+  };
+}
+
+window.addEventListener("DOMContentLoaded", function () {
+  const btn = document.getElementById("audioUnlockBtn");
+
+  if (btn) {
+    btn.addEventListener("click", function () {
+      ssToggleAudioV29();
+    });
+  }
+
+  ssSetAudioStatusV29();
+});

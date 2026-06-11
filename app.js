@@ -1770,3 +1770,84 @@ window.addEventListener("load", () => {
     ssRealHpLogV34("⚔ v34 リアルHP吸収 起動");
   }, 4000);
 });
+/* =========================================================
+   STREET SURVIVAL REAL HP RECEIVE FIX v34.1
+   自分のHP/役割をFirebaseから受け取って画面へ反映
+========================================================= */
+
+let SS_REAL_HP_LAST_REMOTE_APPLY_V341 = 0;
+
+function ssApplyMyRemotePlayerStateV341() {
+  try {
+    if (!SS_PLAYER_ID_V30) return;
+    if (!SS_REMOTE_PLAYERS_V30) return;
+    if (!state || !state.me) return;
+
+    const remoteMe = SS_REMOTE_PLAYERS_V30[SS_PLAYER_ID_V30];
+    if (!remoteMe) return;
+
+    const now = Date.now();
+
+    const remoteHp = Number(remoteMe.hp);
+    const localHp = Number(state.me.hp);
+
+    if (!Number.isNaN(remoteHp) && Math.round(remoteHp) !== Math.round(localHp)) {
+      state.me.hp = clamp(remoteHp, CONFIG.minHp, CONFIG.maxHp);
+      SS_REAL_HP_LAST_REMOTE_APPLY_V341 = now;
+
+      if (typeof addLog === "function") {
+        addLog("❤️ Firebase HP反映: " + Math.round(state.me.hp));
+      }
+    }
+
+    if (remoteMe.role && remoteMe.role !== state.me.role) {
+      state.me.role = remoteMe.role;
+      state.me.hunterEndsAt = remoteMe.hunterEndsAt || null;
+      state.me.invincibleUntil = remoteMe.invincibleUntil || 0;
+
+      if (typeof addLog === "function") {
+        addLog("🔄 Firebase 役割反映: " + remoteMe.role);
+      }
+    }
+
+    if (typeof render === "function") {
+      render();
+    }
+  } catch (e) {
+    console.error("v34.1 apply remote self error", e);
+  }
+}
+
+/* 自分のFirebase状態を定期的に画面へ反映 */
+setInterval(() => {
+  ssApplyMyRemotePlayerStateV341();
+}, 700);
+
+/* 自分が攻撃された直後にローカルHPでFirebaseを上書きしないようにする */
+const ssOriginalSyncMyPlayerV341 =
+  typeof ssSyncMyPlayerV30 === "function" ? ssSyncMyPlayerV30 : null;
+
+if (ssOriginalSyncMyPlayerV341) {
+  window.ssSyncMyPlayerV30 = function () {
+    try {
+      const now = Date.now();
+
+      // FirebaseからHPを受け取った直後は、ローカル値で上書きしない
+      if (now - SS_REAL_HP_LAST_REMOTE_APPLY_V341 < 2500) {
+        return;
+      }
+
+      ssOriginalSyncMyPlayerV341();
+    } catch (e) {
+      console.error("v34.1 sync guard error", e);
+    }
+  };
+}
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    if (typeof addLog === "function") {
+      addLog("❤️ v34.1 HP受信修正 起動");
+    }
+  }, 4500);
+});

@@ -1362,3 +1362,37 @@ window.addEventListener("load", () => {
     ssForceRenderRealPlayersV302();
   }, 5000);
 });
+/* =========================================================
+   STREET SURVIVAL REAL PLAYERS DISPLAY FIX v30.3
+   renderPlayers直後にREAL表示を差し込む・チラつき防止
+========================================================= */
+
+const ssOriginalRenderPlayersV303 =
+  typeof renderPlayers === "function" ? renderPlayers : null;
+
+if (ssOriginalRenderPlayersV303) {
+  window.renderPlayers = function () {
+    // まず元のNPC/自分一覧を描画
+    ssOriginalRenderPlayersV303();
+
+    // その直後にREAL PLAYERSを差し込む
+    try {
+      if (typeof ssForceRenderRealPlayersV302 === "function") {
+        ssForceRenderRealPlayersV302();
+      }
+    } catch (e) {
+      console.error("v30.3 render hook error", e);
+    }
+  };
+}
+
+/* v30.2の1.2秒待ちより速く補助復活 */
+setInterval(() => {
+  try {
+    if (typeof ssForceRenderRealPlayersV302 === "function") {
+      ssForceRenderRealPlayersV302();
+    }
+  } catch (e) {
+    console.error("v30.3 fast render error", e);
+  }
+}, 300);

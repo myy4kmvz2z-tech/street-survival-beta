@@ -706,7 +706,7 @@ function ssShouldNotifyCommand(cmd){
 function ssNotifyCommandOnce(cmd){
   if(!ssShouldNotifyCommand(cmd)) return;
   if(typeof notifyStreetSurvivalCommand === "function"){
-    ssNotifyCommandOnce(cmd);
+    notifyStreetSurvivalCommand(cmd);
   }
 }
 

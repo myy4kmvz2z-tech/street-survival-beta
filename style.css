@@ -444,3 +444,9 @@ body.flash-mission::before{
 .alert-toast{
   animation:none !important;
 }
+
+
+/* β10.2 Push Once Fix */
+.push-toast{
+  max-width:92vw;
+}

@@ -1,7 +1,7 @@
 {
-  "name": "STREET SURVIVAL β10.0",
+  "name": "STREET SURVIVAL β10.2",
   "short_name": "SURVIVAL",
-  "start_url": "./?v=100",
+  "start_url": "./?v=102",
   "display": "standalone",
   "background_color": "#07090c",
   "theme_color": "#07090c",

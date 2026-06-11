@@ -1163,8 +1163,9 @@ window.addEventListener("DOMContentLoaded", function () {
 });
 /* =========================================================
    STREET SURVIVAL REALTIME PLAYER SYNC v30
-   リアル参加者HP同期 土台
-   v29音ON/OFFコードのさらに下に追加
+   /* =========================================================
+   STREET SURVIVAL REALTIME PLAYER SYNC v30.1
+   リアル参加者HP同期 土台・見える化版
 ========================================================= */
 
 let SS_PLAYER_ID_V30 = null;
@@ -1217,8 +1218,7 @@ function ssSyncMyPlayerV30() {
     if (!SS_PLAYER_SYNC_READY_V30) return;
     if (!SS_PLAYERS_REF_V30 || !SS_PLAYER_ID_V30) return;
 
-    const data = ssBuildMyPlayerDataV30();
-    SS_PLAYERS_REF_V30.child(SS_PLAYER_ID_V30).update(data);
+    SS_PLAYERS_REF_V30.child(SS_PLAYER_ID_V30).update(ssBuildMyPlayerDataV30());
   } catch (e) {
     console.error("v30 sync my player error", e);
   }
@@ -1231,29 +1231,34 @@ function ssListenPlayersV30() {
     const all = snap.val() || {};
     SS_REMOTE_PLAYERS_V30 = all;
 
-    const others = Object.values(all).filter(p => {
-      return p && p.id !== SS_PLAYER_ID_V30;
-    });
+    const allPlayers = Object.values(all).filter(Boolean);
+    const others = allPlayers.filter(p => p && p.id !== SS_PLAYER_ID_V30);
 
-    ssRenderRemotePlayersV30(others);
+    ssRenderRemotePlayersV30(others, allPlayers);
   });
 }
 
-function ssRenderRemotePlayersV30(players) {
+function ssRenderRemotePlayersV30(others, allPlayers) {
   try {
     const list = document.getElementById("players");
     if (!list) return;
 
-    const activePlayers = players.filter(p => {
-      return p && Date.now() - Number(p.lastSeen || 0) < 30000;
-    });
-
     const oldRealtime = document.getElementById("realPlayersV30");
     if (oldRealtime) oldRealtime.remove();
 
-    if (!activePlayers.length) return;
+    const activeOthers = others.filter(p => {
+      return p && Date.now() - Number(p.lastSeen || 0) < 60000;
+    });
 
-    const remoteRows = activePlayers.map(p => {
+    const myData = ssBuildMyPlayerDataV30();
+
+    const myRow = `<div class="item">
+      <strong>🧍 自分: ${myData.name}</strong>
+      <small>HP ${myData.hp} / ${CONFIG.maxHp}</small><br>
+      <small>ID ${String(myData.id).slice(-6)} / ${myData.zone}</small>
+    </div>`;
+
+    const remoteRows = activeOthers.map(p => {
       const roleIcon = p.role === "hunter" ? "🟢" : "🔵";
 
       const dist = (typeof meters === "function")
@@ -1263,18 +1268,18 @@ function ssRenderRemotePlayersV30(players) {
       return `<div class="item">
         <strong>${roleIcon} ${p.name || "PLAYER"}</strong>
         <small>HP ${Math.round(p.hp || 0)} / ${CONFIG.maxHp}</small><br>
-        <small>距離 ${dist}m / ${p.zone || "FIELD"}</small>
+        <small>距離 ${dist}m / ${p.zone || "FIELD"} / ID ${String(p.id || "").slice(-6)}</small>
       </div>`;
     });
 
     const header = `<div class="item">
-      <strong>🌐 REAL PLAYERS v30</strong>
-      <small>Firebase同期中</small>
+      <strong>🌐 REAL PLAYERS v30.1</strong>
+      <small>Firebase同期中 / 他参加者 ${activeOthers.length}人 / 全登録 ${allPlayers.length}人</small>
     </div>`;
 
     const wrap = document.createElement("div");
     wrap.id = "realPlayersV30";
-    wrap.innerHTML = header + remoteRows.join("");
+    wrap.innerHTML = header + myRow + remoteRows.join("");
 
     list.prepend(wrap);
   } catch (e) {
@@ -1314,7 +1319,7 @@ async function ssInitRealtimePlayersV30() {
 
     setInterval(ssSyncMyPlayerV30, 3000);
 
-    ssSetSyncLogV30("🌐 v30 リアル参加者同期ON");
+    ssSetSyncLogV30("🌐 v30.1 リアル参加者同期ON");
   } catch (e) {
     console.error("v30 realtime init error", e);
     ssSetSyncLogV30("🌐 v30 同期エラー: " + e.message);
@@ -1324,5 +1329,5 @@ async function ssInitRealtimePlayersV30() {
 window.addEventListener("load", () => {
   setTimeout(() => {
     ssInitRealtimePlayersV30();
-  }, 2500);
+  }, 3000);
 });

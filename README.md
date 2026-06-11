@@ -1,82 +1,40 @@
-# STREET SURVIVAL β8.0 Firebase Realtime
+# STREET SURVIVAL β10.0 Cleanup / 六斎市実戦軽量版
 
-## 追加内容
+β9.1 Ultimate Pushをベースに、7/5(日) 六斎市の実戦運用向けに軽量化した版です。
 
-運営画面と参加者画面を Firebase Realtime Database で連携する土台を追加しました。
+## 残した機能
 
-運営画面で押した指令が、参加者画面へリアルタイム配信されます。
+- Firebaseリアルタイム受信
+- プッシュ通知許可
+- BOSS / LIVE / RADIO / ALERT / SAFE / FINAL
+- HPシステム
+- GPS / RADAR
+- ログ表示
+- Service Worker / PWA
 
-- 📻 RADIO
-- 👹 BOSS
-- 🎯 MISSION
-- 🎵 LIVE
-- 🛡 SAFE
-- 🔥 FINAL
-- 🏆 END
+## 軽量化内容
 
-## 追加ファイル
+- ログ表示を最新30件中心に整理
+- 古い演出DOMを自動整理
+- render処理を軽量化
+- localStorageポーリングを少し低頻度化
+- デバッグ表示を整理
+- 六斎市実戦用の軽量表示を追加
 
-- firebase-config.js
+## アップロードするファイル
 
-ここにFirebaseの設定を貼ります。
-
-## 重要
-
-最初は Firebase OFF の状態です。
-
-`firebase-config.js` の中で、
-
-```js
-window.STREET_SURVIVAL_FIREBASE_ENABLED = false;
-```
-
-を
-
-```js
-window.STREET_SURVIVAL_FIREBASE_ENABLED = true;
-```
-
-に変更するとFirebase連携が有効になります。
-
-その前に Firebase Console で取得した `firebaseConfig` の値を貼り替えてください。
-
-## Firebaseで作るもの
-
-Firebase Consoleで以下を作ります。
-
-1. Project
-2. Web App
-3. Realtime Database
-4. Rulesをテスト用に一時的に設定
-
-テスト用Rules例：
-
-```json
-{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}
-```
-
-※ 本番では必ず認証やパスワード保護が必要です。
-
-## 参加者用
+`street-survival-beta` に以下を上書きしてください。
 
 - index.html
-- style.css
 - app.js
-- firebase-config.js
-
-## 運営用
-
-- admin.html
 - style.css
-- admin.js
-- firebase-config.js
+- sw.js
+- manifest.webmanifest
+- icon-192.png
+- icon-512.png
 
-## 注意
+`firebase-config.js` は今動いているものを残してください。
 
-GitHub Pagesだけでは全員同期はできません。
-Firebase Realtime Databaseを使うことで、運営から参加者全員へリアルタイム配信できます。
+## 開くURL
+
+https://myy4kmvz2z-tech.github.io/street-survival-beta/?v=100

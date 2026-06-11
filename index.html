@@ -184,38 +184,11 @@
 
 </main>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script src="firebase-config-live.js?v=25"></script>
-<script src="app.js?v=25"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script>
-window.addEventListener("load", function(){
-  setTimeout(function(){
-    var el = document.getElementById("firebaseStatus");
-    if(!el) return;
-
-    if(window.STREET_SURVIVAL_FIREBASE_ENABLED !== true){
-      el.textContent = "🔥 Firebase: config未読込";
-      el.className = "firebase-status error";
-      return;
-    }
-
-    if(!window.STREET_SURVIVAL_FIREBASE_CONFIG || !window.STREET_SURVIVAL_FIREBASE_CONFIG.apiKey){
-      el.textContent = "🔥 Firebase: config空";
-      el.className = "firebase-status error";
-      return;
-    }
-
-    el.textContent = "🔥 Firebase: config読込OK";
-    el.className = "firebase-status connected";
-
-    if(typeof window.ssFinalInitFirebasePlayer === "function"){
-      window.ssFinalInitFirebasePlayer();
-    }
-  }, 1500);
-});
-</script>
+<script src="firebase-config-live.js?v=29"></script>
+<script src="app.js?v=29"></script>
 
 </body>
 </html>

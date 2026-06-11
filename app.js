@@ -1161,3 +1161,168 @@ window.addEventListener("DOMContentLoaded", function () {
 
   ssSetAudioStatusV29();
 });
+/* =========================================================
+   STREET SURVIVAL REALTIME PLAYER SYNC v30
+   リアル参加者HP同期 土台
+   v29音ON/OFFコードのさらに下に追加
+========================================================= */
+
+let SS_PLAYER_ID_V30 = null;
+let SS_REMOTE_PLAYERS_V30 = {};
+let SS_PLAYERS_REF_V30 = null;
+let SS_PLAYER_SYNC_READY_V30 = false;
+
+function ssGetPlayerIdV30() {
+  let id = localStorage.getItem("street_survival_player_id_v30");
+
+  if (!id) {
+    id = "p_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem("street_survival_player_id_v30", id);
+  }
+
+  return id;
+}
+
+function ssGetPlayerNameV30() {
+  const input = document.getElementById("playerName");
+  return input && input.value ? input.value.trim() : "PLAYER";
+}
+
+function ssSetSyncLogV30(text) {
+  if (typeof addLog === "function") {
+    addLog(text);
+  } else {
+    console.log(text);
+  }
+}
+
+function ssBuildMyPlayerDataV30() {
+  return {
+    id: SS_PLAYER_ID_V30,
+    name: ssGetPlayerNameV30(),
+    role: state.me.role || "runner",
+    hp: Math.round(state.me.hp || 0),
+    points: Math.round(state.me.points || 0),
+    lat: state.me.lat,
+    lng: state.me.lng,
+    zone: state.me.zone || "FIELD",
+    cityMode: state.cityMode || "NORMAL",
+    online: true,
+    lastSeen: Date.now()
+  };
+}
+
+function ssSyncMyPlayerV30() {
+  try {
+    if (!SS_PLAYER_SYNC_READY_V30) return;
+    if (!SS_PLAYERS_REF_V30 || !SS_PLAYER_ID_V30) return;
+
+    const data = ssBuildMyPlayerDataV30();
+    SS_PLAYERS_REF_V30.child(SS_PLAYER_ID_V30).update(data);
+  } catch (e) {
+    console.error("v30 sync my player error", e);
+  }
+}
+
+function ssListenPlayersV30() {
+  if (!SS_PLAYERS_REF_V30) return;
+
+  SS_PLAYERS_REF_V30.on("value", snap => {
+    const all = snap.val() || {};
+    SS_REMOTE_PLAYERS_V30 = all;
+
+    const others = Object.values(all).filter(p => {
+      return p && p.id !== SS_PLAYER_ID_V30;
+    });
+
+    ssRenderRemotePlayersV30(others);
+  });
+}
+
+function ssRenderRemotePlayersV30(players) {
+  try {
+    const list = document.getElementById("players");
+    if (!list) return;
+
+    const activePlayers = players.filter(p => {
+      return p && Date.now() - Number(p.lastSeen || 0) < 30000;
+    });
+
+    const oldRealtime = document.getElementById("realPlayersV30");
+    if (oldRealtime) oldRealtime.remove();
+
+    if (!activePlayers.length) return;
+
+    const remoteRows = activePlayers.map(p => {
+      const roleIcon = p.role === "hunter" ? "🟢" : "🔵";
+
+      const dist = (typeof meters === "function")
+        ? Math.round(meters(state.me, { lat: p.lat, lng: p.lng }))
+        : "-";
+
+      return `<div class="item">
+        <strong>${roleIcon} ${p.name || "PLAYER"}</strong>
+        <small>HP ${Math.round(p.hp || 0)} / ${CONFIG.maxHp}</small><br>
+        <small>距離 ${dist}m / ${p.zone || "FIELD"}</small>
+      </div>`;
+    });
+
+    const header = `<div class="item">
+      <strong>🌐 REAL PLAYERS v30</strong>
+      <small>Firebase同期中</small>
+    </div>`;
+
+    const wrap = document.createElement("div");
+    wrap.id = "realPlayersV30";
+    wrap.innerHTML = header + remoteRows.join("");
+
+    list.prepend(wrap);
+  } catch (e) {
+    console.error("render remote players error", e);
+  }
+}
+
+async function ssInitRealtimePlayersV30() {
+  try {
+    if (!window.firebase) {
+      ssSetSyncLogV30("🌐 v30: Firebase未読込");
+      return;
+    }
+
+    if (!firebase.apps || !firebase.apps.length) {
+      ssSetSyncLogV30("🌐 v30: Firebase未初期化");
+      return;
+    }
+
+    SS_PLAYER_ID_V30 = ssGetPlayerIdV30();
+    SS_PLAYERS_REF_V30 = firebase.database().ref("streetSurvival/players");
+    SS_PLAYER_SYNC_READY_V30 = true;
+
+    const myRef = SS_PLAYERS_REF_V30.child(SS_PLAYER_ID_V30);
+
+    myRef.onDisconnect().update({
+      online: false,
+      lastSeen: Date.now()
+    });
+
+    await myRef.update({
+      ...ssBuildMyPlayerDataV30(),
+      joinedAt: Date.now()
+    });
+
+    ssListenPlayersV30();
+
+    setInterval(ssSyncMyPlayerV30, 3000);
+
+    ssSetSyncLogV30("🌐 v30 リアル参加者同期ON");
+  } catch (e) {
+    console.error("v30 realtime init error", e);
+    ssSetSyncLogV30("🌐 v30 同期エラー: " + e.message);
+  }
+}
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    ssInitRealtimePlayersV30();
+  }, 2500);
+});

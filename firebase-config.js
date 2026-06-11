@@ -2,7 +2,7 @@
 // ここをFirebaseの「ウェブアプリ設定」からコピーした値に貼り替えてください。
 // Firebase Console → Project settings → Your apps → Web app → firebaseConfig
 
-window.STREET_SURVIVAL_FIREBASE_ENABLED = true;
+window.STREET_SURVIVAL_FIREBASE_ENABLED = false;
 
 window.STREET_SURVIVAL_FIREBASE_CONFIG = {
   apiKey: "PASTE_YOUR_API_KEY",

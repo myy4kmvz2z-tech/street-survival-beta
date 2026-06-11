@@ -1332,3 +1332,33 @@ window.addEventListener("load", () => {
   }, 3000);
 });
 
+/* =========================================================
+   STREET SURVIVAL REAL PLAYERS DISPLAY FIX v30.2
+   renderPlayers上書き対策：REAL表示を毎秒復活
+========================================================= */
+
+function ssForceRenderRealPlayersV302() {
+  try {
+    if (typeof SS_PLAYER_ID_V30 === "undefined" || !SS_PLAYER_ID_V30) return;
+
+    const all = SS_REMOTE_PLAYERS_V30 || {};
+    const allPlayers = Object.values(all).filter(Boolean);
+    const others = allPlayers.filter(p => p && p.id !== SS_PLAYER_ID_V30);
+
+    if (typeof ssRenderRemotePlayersV30 === "function") {
+      ssRenderRemotePlayersV30(others, allPlayers);
+    }
+  } catch (e) {
+    console.error("v30.2 force render error", e);
+  }
+}
+
+setInterval(() => {
+  ssForceRenderRealPlayersV302();
+}, 1200);
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    ssForceRenderRealPlayersV302();
+  }, 5000);
+});

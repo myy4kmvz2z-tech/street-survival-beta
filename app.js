@@ -1488,3 +1488,43 @@ window.addEventListener("load", () => {
     ssRenderStableRealPlayersV304();
   }, 5000);
 });
+/* =========================================================
+   STREET SURVIVAL REAL PLAYERS FLICKER STOP v30.5
+   v30.2 / v30.3 の点滅表示を停止して v30.4 固定表示だけ残す
+========================================================= */
+
+window.ssForceRenderRealPlayersV302 = function () {
+  // v30.2 / v30.3 の players差し込み表示を停止
+};
+
+window.ssRenderRemotePlayersV30 = function () {
+  // v30.1 の players差し込み表示を停止
+};
+
+setInterval(() => {
+  try {
+    const old = document.getElementById("realPlayersV30");
+    if (old) old.remove();
+
+    if (typeof ssRenderStableRealPlayersV304 === "function") {
+      ssRenderStableRealPlayersV304();
+    }
+  } catch (e) {
+    console.error("v30.5 flicker stop error", e);
+  }
+}, 1000);
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    try {
+      const old = document.getElementById("realPlayersV30");
+      if (old) old.remove();
+
+      if (typeof ssRenderStableRealPlayersV304 === "function") {
+        ssRenderStableRealPlayersV304();
+      }
+    } catch (e) {
+      console.error("v30.5 load error", e);
+    }
+  }, 3000);
+});

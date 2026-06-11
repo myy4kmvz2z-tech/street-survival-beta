@@ -1396,3 +1396,95 @@ setInterval(() => {
     console.error("v30.3 fast render error", e);
   }
 }, 300);
+/* =========================================================
+   STREET SURVIVAL REAL PLAYERS STABLE SLOT v30.4
+   点滅防止：players内ではなく専用エリアに固定表示
+========================================================= */
+
+function ssEnsureRealPlayersSlotV304() {
+  let slot = document.getElementById("realPlayersStableV304");
+  if (slot) return slot;
+
+  const players = document.getElementById("players");
+  if (!players || !players.parentNode) return null;
+
+  slot = document.createElement("div");
+  slot.id = "realPlayersStableV304";
+  slot.className = "player-list";
+
+  players.parentNode.insertBefore(slot, players);
+
+  return slot;
+}
+
+function ssRenderStableRealPlayersV304() {
+  try {
+    const slot = ssEnsureRealPlayersSlotV304();
+    if (!slot) return;
+
+    if (typeof SS_PLAYER_ID_V30 === "undefined" || !SS_PLAYER_ID_V30) {
+      slot.innerHTML = `<div class="item">
+        <strong>🌐 REAL PLAYERS v30.4</strong>
+        <small>同期準備中...</small>
+      </div>`;
+      return;
+    }
+
+    const all = SS_REMOTE_PLAYERS_V30 || {};
+    const allPlayers = Object.values(all).filter(Boolean);
+    const others = allPlayers.filter(p => p && p.id !== SS_PLAYER_ID_V30);
+
+    const activeOthers = others.filter(p => {
+      return p && Date.now() - Number(p.lastSeen || 0) < 60000;
+    });
+
+    const myName = typeof ssGetPlayerNameV30 === "function"
+      ? ssGetPlayerNameV30()
+      : "PLAYER";
+
+    const myHp = state && state.me ? Math.round(state.me.hp || 0) : 0;
+    const myZone = state && state.me ? state.me.zone || "FIELD" : "FIELD";
+
+    const header = `<div class="item">
+      <strong>🌐 REAL PLAYERS v30.4</strong>
+      <small>Firebase同期中 / 他参加者 ${activeOthers.length}人 / 全登録 ${allPlayers.length}人</small>
+    </div>`;
+
+    const myRow = `<div class="item">
+      <strong>🧍 自分: ${myName}</strong>
+      <small>HP ${myHp} / ${CONFIG.maxHp}</small><br>
+      <small>ID ${String(SS_PLAYER_ID_V30).slice(-6)} / ${myZone}</small>
+    </div>`;
+
+    const remoteRows = activeOthers.map(p => {
+      const roleIcon = p.role === "hunter" ? "🟢" : "🔵";
+      const dist = (typeof meters === "function" && state && state.me)
+        ? Math.round(meters(state.me, { lat: p.lat, lng: p.lng }))
+        : "-";
+
+      return `<div class="item">
+        <strong>${roleIcon} ${p.name || "PLAYER"}</strong>
+        <small>HP ${Math.round(p.hp || 0)} / ${CONFIG.maxHp}</small><br>
+        <small>距離 ${dist}m / ${p.zone || "FIELD"} / ID ${String(p.id || "").slice(-6)}</small>
+      </div>`;
+    });
+
+    slot.innerHTML = header + myRow + remoteRows.join("");
+  } catch (e) {
+    console.error("v30.4 stable render error", e);
+  }
+}
+
+setInterval(() => {
+  ssRenderStableRealPlayersV304();
+}, 1000);
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    ssRenderStableRealPlayersV304();
+  }, 1500);
+
+  setTimeout(() => {
+    ssRenderStableRealPlayersV304();
+  }, 5000);
+});

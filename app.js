@@ -1851,4 +1851,170 @@ window.addEventListener("load", () => {
     }
   }, 4500);
 });
-　
+/* =========================================================
+   STREET SURVIVAL STABLE GUARD v38
+   安定化：古い参加者整理 / 表示整理 / ログ連打防止 / 同期負荷軽減
+========================================================= */
+
+const SS_STABLE_PLAYER_MAX_AGE_V38 = 1000 * 60 * 3;      // 3分以上古い参加者は整理対象
+const SS_STABLE_CLEAN_INTERVAL_V38 = 1000 * 30;          // 30秒ごとに整理
+const SS_STABLE_LOG_INTERVAL_V38 = 1000 * 4;             // 同じログは4秒に1回まで
+const SS_STABLE_SYNC_INTERVAL_V38 = 1000 * 5;            // 通常同期は5秒目安
+
+let SS_STABLE_LAST_CLEAN_AT_V38 = 0;
+let SS_STABLE_LAST_SYNC_AT_V38 = 0;
+let SS_STABLE_LOG_CACHE_V38 = {};
+
+function ssStableLogV38(key, text) {
+  try {
+    const now = Date.now();
+    const last = SS_STABLE_LOG_CACHE_V38[key] || 0;
+
+    if (now - last < SS_STABLE_LOG_INTERVAL_V38) return;
+
+    SS_STABLE_LOG_CACHE_V38[key] = now;
+
+    if (typeof addLog === "function") {
+      addLog(text);
+    } else {
+      console.log(text);
+    }
+  } catch (e) {
+    console.error("v38 stable log error", e);
+  }
+}
+
+function ssStableIsActivePlayerV38(p) {
+  try {
+    if (!p) return false;
+    if (!p.id) return false;
+    if (p.online === false) return false;
+
+    const lastSeen = Number(p.lastSeen || 0);
+    if (!lastSeen) return false;
+
+    return Date.now() - lastSeen < SS_STABLE_PLAYER_MAX_AGE_V38;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function ssStableCleanupOldPlayersV38() {
+  try {
+    if (!SS_PLAYERS_REF_V30) return;
+    if (!SS_REMOTE_PLAYERS_V30) return;
+
+    const now = Date.now();
+
+    if (now - SS_STABLE_LAST_CLEAN_AT_V38 < SS_STABLE_CLEAN_INTERVAL_V38) return;
+    SS_STABLE_LAST_CLEAN_AT_V38 = now;
+
+    const all = SS_REMOTE_PLAYERS_V30 || {};
+    const updates = {};
+    let removeCount = 0;
+
+    Object.values(all).forEach(p => {
+      if (!p || !p.id) return;
+      if (p.id === SS_PLAYER_ID_V30) return;
+
+      const lastSeen = Number(p.lastSeen || 0);
+
+      if (!lastSeen || now - lastSeen > SS_STABLE_PLAYER_MAX_AGE_V38) {
+        updates[p.id] = null;
+        removeCount++;
+      }
+    });
+
+    if (removeCount > 0) {
+      await SS_PLAYERS_REF_V30.update(updates);
+      ssStableLogV38(
+        "cleanup_players",
+        "🧹 v38 古い参加者データ整理: " + removeCount + "件"
+      );
+    }
+  } catch (e) {
+    console.error("v38 cleanup old players error", e);
+  }
+}
+
+function ssStableFilterRemotePlayersV38() {
+  try {
+    if (!SS_REMOTE_PLAYERS_V30) return;
+
+    const cleaned = {};
+
+    Object.entries(SS_REMOTE_PLAYERS_V30).forEach(([id, p]) => {
+      if (ssStableIsActivePlayerV38(p)) {
+        cleaned[id] = p;
+      }
+    });
+
+    SS_REMOTE_PLAYERS_V30 = cleaned;
+  } catch (e) {
+    console.error("v38 filter remote players error", e);
+  }
+}
+
+/* v30.4固定表示を安定化版で上書き */
+const ssOriginalStableRenderV304_V38 =
+  typeof ssRenderStableRealPlayersV304 === "function"
+    ? ssRenderStableRealPlayersV304
+    : null;
+
+if (ssOriginalStableRenderV304_V38) {
+  window.ssRenderStableRealPlayersV304 = function () {
+    try {
+      ssStableFilterRemotePlayersV38();
+      ssOriginalStableRenderV304_V38();
+    } catch (e) {
+      console.error("v38 stable display hook error", e);
+    }
+  };
+}
+
+/* HP吸収ログの連打を軽くする */
+const ssOriginalRealHpLogV34_V38 =
+  typeof ssRealHpLogV34 === "function" ? ssRealHpLogV34 : null;
+
+if (ssOriginalRealHpLogV34_V38) {
+  window.ssRealHpLogV34 = function (text) {
+    try {
+      const key = String(text || "").slice(0, 20);
+      ssStableLogV38("hp_" + key, text);
+    } catch (e) {
+      console.error("v38 hp log hook error", e);
+    }
+  };
+}
+
+/* 通常の自分同期を少し間引く */
+const ssOriginalSyncMyPlayerV38 =
+  typeof ssSyncMyPlayerV30 === "function" ? ssSyncMyPlayerV30 : null;
+
+if (ssOriginalSyncMyPlayerV38) {
+  window.ssSyncMyPlayerV30 = function () {
+    try {
+      const now = Date.now();
+
+      if (now - SS_STABLE_LAST_SYNC_AT_V38 < SS_STABLE_SYNC_INTERVAL_V38) {
+        return;
+      }
+
+      SS_STABLE_LAST_SYNC_AT_V38 = now;
+      ssOriginalSyncMyPlayerV38();
+    } catch (e) {
+      console.error("v38 sync throttle error", e);
+    }
+  };
+}
+
+/* 整理処理 */
+setInterval(() => {
+  ssStableCleanupOldPlayersV38();
+}, 5000);
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    ssStableLogV38("v38_start", "🛡 v38 安定化ガード起動");
+  }, 5000);
+});　

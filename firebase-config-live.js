@@ -14,4 +14,4 @@ window.STREET_SURVIVAL_FIREBASE_CONFIG = {
   measurementId: "G-HTWXX6J5YN"
 };
 
-console.log("STREET SURVIVAL: Firebase ON / LIVE MODE");Unsupported Media Type
+console.log("STREET SURVIVAL: Firebase ON / LIVE MODE");

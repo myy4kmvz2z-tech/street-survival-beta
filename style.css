@@ -393,3 +393,54 @@ body.alert-flash .scanner-section{
   text-align:center;
   margin:8px auto;
 }
+
+
+/* β10.1 No Global Flash / 全体点滅停止 */
+body.notify-flash,
+body.alert-flash,
+body.danger-flash,
+body.flash-safe,
+body.flash-boss,
+body.flash-final,
+body.flash-mission{
+  animation:none !important;
+  filter:none !important;
+}
+
+body.notify-flash::before,
+body.alert-flash::before,
+body.danger-flash::before,
+body.flash-safe::before,
+body.flash-boss::before,
+body.flash-final::before,
+body.flash-mission::before{
+  display:none !important;
+  content:none !important;
+  animation:none !important;
+}
+
+/* 必要な反応はHUD内だけに限定 */
+#statusPanel.alert-hard,
+.status-panel.alert-hard{
+  border-color:#f7c948 !important;
+  box-shadow:0 0 22px rgba(247,201,72,.36) !important;
+}
+
+#statusPanel.battle-mode,
+.status-panel.battle-mode{
+  animation:none !important;
+  box-shadow:0 0 22px rgba(255,77,94,.35) !important;
+}
+
+.radar.danger,
+.radar.final,
+.radar.safe{
+  animation:none !important;
+}
+
+/* 点滅ではなく軽い発光だけ */
+.radio-popup,
+.push-toast,
+.alert-toast{
+  animation:none !important;
+}

@@ -1528,3 +1528,177 @@ window.addEventListener("load", () => {
     setTimeout(ssRoleStart, 2200);
   });
 })();
+/* ROLE SYNC v34 - simple */
+(function(){
+  let started = false;
+
+  function roleSyncLog(msg){
+    if(typeof addLog === "function") addLog(msg);
+    else console.log(msg);
+  }
+
+  function getDb(){
+    try{
+      if(typeof SS_FINAL_DB !== "undefined" && SS_FINAL_DB) return SS_FINAL_DB;
+    }catch(e){}
+
+    try{
+      if(typeof ssFirebasePlayerDb !== "undefined" && ssFirebasePlayerDb) return ssFirebasePlayerDb;
+    }catch(e){}
+
+    try{
+      if(typeof firebaseDb !== "undefined" && firebaseDb) return firebaseDb;
+    }catch(e){}
+
+    try{
+      if(window.firebase && firebase.apps && firebase.apps.length){
+        return firebase.database();
+      }
+    }catch(e){}
+
+    return null;
+  }
+
+  function getPlayerId(){
+    return localStorage.getItem("street_survival_player_id");
+  }
+
+  function setRoleView(role, hunterEndsAt){
+    const upper = String(role || "RUNNER").toUpperCase();
+    const localRole = upper === "HUNTER" ? "hunter" : "runner";
+
+    if(typeof state !== "undefined" && state.me){
+      state.me.role = localRole;
+      state.me.hunterEndsAt = hunterEndsAt || null;
+    }
+
+    const badge = document.getElementById("roleBadge");
+    if(badge){
+      badge.textContent = upper;
+      badge.className = "badge " + (upper === "HUNTER" ? "hunter" : "runner");
+    }
+
+    const title = document.getElementById("statusTitle");
+    if(title) title.textContent = upper;
+
+    const icon = document.getElementById("statusIcon");
+    if(icon) icon.textContent = upper === "HUNTER" ? "🟢" : "🔵";
+
+    const sub = document.getElementById("statusSub");
+    if(sub) sub.textContent = upper === "HUNTER" ? "🎯 追跡中" : "🏃 生存中";
+
+    if(typeof render === "function") render();
+  }
+
+  function ensureTimerHud(){
+    let hud = document.getElementById("roleSyncHunterHud");
+    if(hud) return hud;
+
+    hud = document.createElement("div");
+    hud.id = "roleSyncHunterHud";
+    hud.style.position = "fixed";
+    hud.style.left = "12px";
+    hud.style.right = "12px";
+    hud.style.bottom = "14px";
+    hud.style.zIndex = "999999";
+    hud.style.padding = "14px";
+    hud.style.borderRadius = "16px";
+    hud.style.background = "rgba(120,0,0,.95)";
+    hud.style.color = "#fff";
+    hud.style.fontWeight = "900";
+    hud.style.textAlign = "center";
+    hud.style.fontSize = "18px";
+    hud.style.display = "none";
+    document.body.appendChild(hud);
+    return hud;
+  }
+
+  function formatRemain(ms){
+    const sec = Math.max(0, Math.ceil(ms / 1000));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + ":" + String(s).padStart(2, "0");
+  }
+
+  function showTimer(role, hunterEndsAt, ref){
+    const hud = ensureTimerHud();
+    const upper = String(role || "RUNNER").toUpperCase();
+
+    if(upper !== "HUNTER"){
+      hud.style.display = "none";
+      const timer = document.getElementById("hunterTimer");
+      if(timer) timer.textContent = "-";
+      return;
+    }
+
+    const remain = Number(hunterEndsAt || 0) - Date.now();
+
+    if(!hunterEndsAt){
+      hud.style.display = "block";
+      hud.textContent = "🟢 HUNTER MODE";
+      return;
+    }
+
+    if(remain <= 0){
+      hud.style.display = "block";
+      hud.textContent = "🔵 RUNNERへ戻ります...";
+
+      ref.update({
+        role: "RUNNER",
+        hunterEndsAt: null,
+        lastAdminAction: "HUNTER_TIME_UP",
+        lastSeen: Date.now()
+      });
+
+      return;
+    }
+
+    const text = formatRemain(remain);
+    hud.style.display = "block";
+    hud.textContent = "🟢 HUNTER 残り " + text;
+
+    const timer = document.getElementById("hunterTimer");
+    if(timer) timer.textContent = text;
+  }
+
+  function start(){
+    if(started) return;
+
+    const db = getDb();
+    const playerId = getPlayerId();
+
+    if(!db || !playerId){
+      setTimeout(start, 1000);
+      return;
+    }
+
+    started = true;
+
+    const ref = db.ref("streetSurvival/players/" + playerId);
+
+    ref.on("value", snap => {
+      const p = snap.val();
+
+      if(!p){
+        roleSyncLog("⚠️ 自分のFirebaseデータなし");
+        return;
+      }
+
+      setRoleView(p.role, p.hunterEndsAt);
+      showTimer(p.role, p.hunterEndsAt, ref);
+    });
+
+    setInterval(() => {
+      ref.get().then(snap => {
+        const p = snap.val();
+        if(p) showTimer(p.role, p.hunterEndsAt, ref);
+      });
+    }, 1000);
+
+    roleSyncLog("✅ ROLE同期開始 v34: " + playerId);
+  }
+
+  window.addEventListener("load", () => {
+    setTimeout(start, 2500);
+  });
+})();

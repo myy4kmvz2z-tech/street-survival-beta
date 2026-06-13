@@ -1299,3 +1299,232 @@ window.addEventListener("load", () => {
     setTimeout(ssHunterStartTimer, 1800);
   });
 })();
+/* =====================================================
+  STREET SURVIVAL PLAYER ROLE SYNC v33
+  Firebaseの自分データを画面に反映 / HUNTER表示修正
+===================================================== */
+
+(function(){
+  let ssRoleSyncStarted = false;
+  let ssRoleSyncPlayerRef = null;
+  let ssRoleSyncLatestPlayer = null;
+  let ssRoleReturnLock = false;
+
+  function ssRoleLog(msg){
+    if(typeof addLog === "function"){
+      addLog(msg);
+    }else{
+      console.log(msg);
+    }
+  }
+
+  function ssRoleGetDb(){
+    try{
+      if(typeof SS_FINAL_DB !== "undefined" && SS_FINAL_DB){
+        return SS_FINAL_DB;
+      }
+    }catch(e){}
+
+    try{
+      if(typeof ssFirebasePlayerDb !== "undefined" && ssFirebasePlayerDb){
+        return ssFirebasePlayerDb;
+      }
+    }catch(e){}
+
+    try{
+      if(typeof firebaseDb !== "undefined" && firebaseDb){
+        return firebaseDb;
+      }
+    }catch(e){}
+
+    try{
+      if(window.firebase && firebase.apps && firebase.apps.length){
+        return firebase.database();
+      }
+    }catch(e){}
+
+    return null;
+  }
+
+  function ssRoleGetPlayerId(){
+    return localStorage.getItem("street_survival_player_id");
+  }
+
+  function ssRoleSetText(id, text){
+    const el = document.getElementById(id);
+    if(el) el.textContent = text;
+  }
+
+  function ssRoleFormatTime(ms){
+    const totalSec = Math.max(0, Math.ceil(ms / 1000));
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    return min + ":" + String(sec).padStart(2, "0");
+  }
+
+  function ssRoleEnsureHud(){
+    let hud = document.getElementById("ssHunterTimerHud");
+
+    if(hud) return hud;
+
+    hud = document.createElement("div");
+    hud.id = "ssHunterTimerHud";
+    hud.style.position = "fixed";
+    hud.style.left = "12px";
+    hud.style.right = "12px";
+    hud.style.bottom = "14px";
+    hud.style.zIndex = "99999";
+    hud.style.padding = "14px";
+    hud.style.borderRadius = "16px";
+    hud.style.background = "rgba(120, 0, 0, 0.94)";
+    hud.style.color = "#fff";
+    hud.style.fontWeight = "900";
+    hud.style.textAlign = "center";
+    hud.style.fontSize = "18px";
+    hud.style.boxShadow = "0 0 24px rgba(255,0,0,.45)";
+    hud.style.border = "2px solid rgba(255,255,255,.35)";
+    hud.style.display = "none";
+
+    document.body.appendChild(hud);
+    return hud;
+  }
+
+  function ssRoleApplyToLocalState(player){
+    if(!player) return;
+
+    const role = String(player.role || "RUNNER").toUpperCase();
+    const localRole = role === "HUNTER" ? "hunter" : "runner";
+
+    try{
+      if(typeof state !== "undefined" && state.me){
+        state.me.role = localRole;
+        state.me.hunterEndsAt = player.hunterEndsAt || null;
+
+        if(typeof player.hp === "number") state.me.hp = player.hp;
+        if(typeof player.points === "number") state.me.points = player.points;
+      }
+    }catch(e){}
+
+    const badge = document.getElementById("roleBadge");
+    if(badge){
+      badge.textContent = role;
+      badge.className = "badge " + (role === "HUNTER" ? "hunter" : "runner");
+    }
+
+    ssRoleSetText("statusTitle", role);
+
+    const statusIcon = document.getElementById("statusIcon");
+    if(statusIcon) statusIcon.textContent = role === "HUNTER" ? "🟢" : "🔵";
+
+    const statusSub = document.getElementById("statusSub");
+    if(statusSub) statusSub.textContent = role === "HUNTER" ? "🎯 追跡中" : "🏃 生存中";
+
+    if(typeof render === "function"){
+      render();
+    }
+  }
+
+  async function ssRoleReturnRunner(){
+    if(!ssRoleSyncPlayerRef) return;
+    if(ssRoleReturnLock) return;
+
+    ssRoleReturnLock = true;
+
+    try{
+      await ssRoleSyncPlayerRef.update({
+        role: "RUNNER",
+        hunterEndsAt: null,
+        lastAdminAction: "HUNTER_TIME_UP",
+        lastSeen: Date.now()
+      });
+
+      ssRoleLog("⏰ HUNTER時間終了 → RUNNERへ戻りました");
+    }catch(e){
+      console.error(e);
+      ssRoleLog("HUNTER自動復帰エラー: " + e.message);
+    }
+
+    setTimeout(() => {
+      ssRoleReturnLock = false;
+    }, 3000);
+  }
+
+  function ssRoleRenderHunterTimer(){
+    const hud = ssRoleEnsureHud();
+    const player = ssRoleSyncLatestPlayer || {};
+    const role = String(player.role || "RUNNER").toUpperCase();
+
+    if(role !== "HUNTER"){
+      hud.style.display = "none";
+      ssRoleSetText("hunterTimer", "-");
+      return;
+    }
+
+    const endsAt = Number(player.hunterEndsAt || 0);
+
+    if(!endsAt){
+      hud.style.display = "block";
+      hud.textContent = "🟢 HUNTER MODE";
+      ssRoleSetText("hunterTimer", "HUNTER");
+      return;
+    }
+
+    const remain = endsAt - Date.now();
+
+    if(remain <= 0){
+      hud.style.display = "block";
+      hud.textContent = "🔵 RUNNERへ戻ります...";
+      ssRoleSetText("hunterTimer", "0:00");
+      ssRoleReturnRunner();
+      return;
+    }
+
+    const time = ssRoleFormatTime(remain);
+    hud.style.display = "block";
+    hud.textContent = "🟢 HUNTER 残り " + time;
+    ssRoleSetText("hunterTimer", time);
+  }
+
+  function ssRoleStart(){
+    if(ssRoleSyncStarted) return;
+
+    const db = ssRoleGetDb();
+
+    if(!db){
+      setTimeout(ssRoleStart, 1000);
+      return;
+    }
+
+    const playerId = ssRoleGetPlayerId();
+
+    if(!playerId){
+      ssRoleLog("⚠️ PLAYER IDなし。再読み込みしてください");
+      setTimeout(ssRoleStart, 1000);
+      return;
+    }
+
+    ssRoleSyncStarted = true;
+    ssRoleSyncPlayerRef = db.ref("streetSurvival/players/" + playerId);
+
+    ssRoleSyncPlayerRef.on("value", snap => {
+      const player = snap.val();
+
+      if(!player){
+        ssRoleLog("⚠️ 自分のFirebaseデータなし: " + playerId);
+        return;
+      }
+
+      ssRoleSyncLatestPlayer = player;
+      ssRoleApplyToLocalState(player);
+      ssRoleRenderHunterTimer();
+    });
+
+    setInterval(ssRoleRenderHunterTimer, 1000);
+
+    ssRoleLog("✅ ROLE同期開始 v33: " + playerId);
+  }
+
+  window.addEventListener("load", () => {
+    setTimeout(ssRoleStart, 2200);
+  });
+})();

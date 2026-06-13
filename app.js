@@ -367,7 +367,39 @@ function ssApplyFirebaseCommand(cmd){
     if(typeof addLog === "function") addLog("🔥 Firebase受信エラー: " + e.message);
   }
 }
+function getPlayerId(){
+  let id = localStorage.getItem("street_survival_player_id");
 
+  if(!id){
+    id = "player_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+    localStorage.setItem("street_survival_player_id", id);
+  }
+
+  return id;
+}
+
+function registerPlayer(){
+  if(!firebaseDb) return;
+
+  const playerId = getPlayerId();
+
+  firebaseDb.ref("streetSurvival/players/" + playerId).set({
+    id: playerId,
+    role: "RUNNER",
+    hp: 100,
+    points: 0,
+    area: "UNKNOWN",
+    status: "ONLINE",
+    lastSeen: Date.now()
+  });
+
+  firebaseDb.ref("streetSurvival/players/" + playerId).onDisconnect().update({
+    status: "OFFLINE",
+    lastSeen: Date.now()
+  });
+
+  log("PLAYER登録OK: " + playerId);
+}
 async function initFirebasePlayer(){
   try{
     if(!window.STREET_SURVIVAL_FIREBASE_ENABLED){
@@ -386,7 +418,11 @@ async function initFirebasePlayer(){
     if(!firebase.apps.length){
       firebase.initializeApp(window.STREET_SURVIVAL_FIREBASE_CONFIG);
     }
+    
     ssFirebasePlayerDb = firebase.database();
+    
+    registerPlayer();
+    
     ssFirebasePlayerDb.ref("streetSurvival/currentCommand").on("value", snap=>{
       const cmd = snap.val();
       if(cmd) ssApplyFirebaseCommand(cmd);

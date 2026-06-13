@@ -1085,3 +1085,183 @@ window.addEventListener("load", () => {
     ssFinalInitFirebasePlayer();
   }, 800);
 });
+/* =====================================================
+  STREET SURVIVAL PLAYER HUNTER TIMER v31
+  HUNTER残り時間表示 / 10分後RUNNER自動復帰
+===================================================== */
+
+(function(){
+  let ssHunterTimerPlayerRef = null;
+  let ssHunterTimerLatestPlayer = null;
+  let ssHunterTimerStarted = false;
+
+  function ssHunterLog(msg){
+    if(typeof log === "function"){
+      log(msg);
+    }else{
+      console.log(msg);
+    }
+  }
+
+  function ssHunterGetDb(){
+    try{
+      if(typeof ssFirebasePlayerDb !== "undefined" && ssFirebasePlayerDb){
+        return ssFirebasePlayerDb;
+      }
+    }catch(e){}
+
+    try{
+      if(typeof firebaseDb !== "undefined" && firebaseDb){
+        return firebaseDb;
+      }
+    }catch(e){}
+
+    try{
+      if(window.firebase && firebase.apps && firebase.apps.length){
+        return firebase.database();
+      }
+    }catch(e){}
+
+    return null;
+  }
+
+  function ssHunterGetPlayerId(){
+    let id = localStorage.getItem("street_survival_player_id");
+
+    if(!id){
+      id = "player_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      localStorage.setItem("street_survival_player_id", id);
+    }
+
+    return id;
+  }
+
+  function ssHunterEnsureHud(){
+    let hud = document.getElementById("ssHunterTimerHud");
+
+    if(hud) return hud;
+
+    hud = document.createElement("div");
+    hud.id = "ssHunterTimerHud";
+    hud.style.position = "fixed";
+    hud.style.left = "12px";
+    hud.style.right = "12px";
+    hud.style.bottom = "14px";
+    hud.style.zIndex = "99999";
+    hud.style.padding = "14px";
+    hud.style.borderRadius = "16px";
+    hud.style.background = "rgba(120, 0, 0, 0.92)";
+    hud.style.color = "#fff";
+    hud.style.fontWeight = "900";
+    hud.style.textAlign = "center";
+    hud.style.fontSize = "18px";
+    hud.style.boxShadow = "0 0 24px rgba(255,0,0,.45)";
+    hud.style.display = "none";
+
+    document.body.appendChild(hud);
+    return hud;
+  }
+
+  function ssHunterSetRoleText(role){
+    const ids = [
+      "roleText",
+      "roleLabel",
+      "playerRole",
+      "statusRole",
+      "mainRole",
+      "roleBadge"
+    ];
+
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = role;
+    });
+  }
+
+  function ssHunterFormatTime(ms){
+    const totalSec = Math.max(0, Math.ceil(ms / 1000));
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    return min + ":" + String(sec).padStart(2, "0");
+  }
+
+  async function ssHunterReturnRunner(){
+    if(!ssHunterTimerPlayerRef) return;
+
+    try{
+      await ssHunterTimerPlayerRef.update({
+        role: "RUNNER",
+        hunterEndsAt: null,
+        lastAdminAction: "HUNTER_TIME_UP",
+        lastSeen: Date.now()
+      });
+
+      ssHunterLog("HUNTER時間終了 → RUNNERへ戻りました");
+    }catch(e){
+      console.error(e);
+      ssHunterLog("HUNTER自動復帰エラー: " + e.message);
+    }
+  }
+
+  function ssHunterRender(){
+    const hud = ssHunterEnsureHud();
+    const player = ssHunterTimerLatestPlayer || {};
+    const role = String(player.role || "RUNNER").toUpperCase();
+
+    ssHunterSetRoleText(role);
+
+    if(role !== "HUNTER"){
+      hud.style.display = "none";
+      return;
+    }
+
+    const endsAt = Number(player.hunterEndsAt || 0);
+
+    if(!endsAt){
+      hud.style.display = "block";
+      hud.textContent = "🟢 HUNTER MODE";
+      return;
+    }
+
+    const remain = endsAt - Date.now();
+
+    if(remain <= 0){
+      hud.style.display = "block";
+      hud.textContent = "🔵 RUNNERへ戻ります...";
+      ssHunterReturnRunner();
+      return;
+    }
+
+    hud.style.display = "block";
+    hud.textContent = "🟢 HUNTER 残り " + ssHunterFormatTime(remain);
+  }
+
+  function ssHunterStartTimer(){
+    if(ssHunterTimerStarted) return;
+
+    const db = ssHunterGetDb();
+
+    if(!db){
+      setTimeout(ssHunterStartTimer, 1000);
+      return;
+    }
+
+    ssHunterTimerStarted = true;
+
+    const playerId = ssHunterGetPlayerId();
+    ssHunterTimerPlayerRef = db.ref("streetSurvival/players/" + playerId);
+
+    ssHunterTimerPlayerRef.on("value", snap => {
+      ssHunterTimerLatestPlayer = snap.val() || {};
+      ssHunterRender();
+    });
+
+    setInterval(ssHunterRender, 1000);
+
+    ssHunterLog("HUNTERタイマー開始 v31: " + playerId);
+  }
+
+  window.addEventListener("load", () => {
+    setTimeout(ssHunterStartTimer, 1500);
+  });
+})();

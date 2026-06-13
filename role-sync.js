@@ -18,6 +18,7 @@
         return firebase.database();
       }
     }catch(e){}
+
     return null;
   }
 
@@ -39,6 +40,7 @@
 
   function ensureHud(){
     let hud = document.getElementById("roleSyncHud");
+
     if(hud) return hud;
 
     hud = document.createElement("div");
@@ -56,6 +58,9 @@
     hud.style.textAlign = "center";
     hud.style.fontSize = "18px";
     hud.style.display = "none";
+    hud.style.boxShadow = "0 0 24px rgba(255,0,0,.45)";
+    hud.style.border = "2px solid rgba(255,255,255,.35)";
+
     document.body.appendChild(hud);
 
     return hud;
@@ -107,8 +112,14 @@
     if(typeof state !== "undefined" && state.me){
       state.me.role = isHunter ? "hunter" : "runner";
       state.me.hunterEndsAt = player.hunterEndsAt || null;
-      if(typeof player.hp === "number") state.me.hp = player.hp;
-      if(typeof player.points === "number") state.me.points = player.points;
+
+      if(typeof player.hp === "number"){
+        state.me.hp = player.hp;
+      }
+
+      if(typeof player.points === "number"){
+        state.me.points = player.points;
+      }
     }
 
     const badge = document.getElementById("roleBadge");
@@ -126,7 +137,11 @@
     if(!isHunter){
       hud.style.display = "none";
       setText("hunterTimer", "-");
-      if(typeof render === "function") render();
+
+      if(typeof render === "function"){
+        render();
+      }
+
       return;
     }
 
@@ -136,7 +151,11 @@
       hud.style.display = "block";
       hud.textContent = "🟢 HUNTER MODE";
       setText("hunterTimer", "HUNTER");
-      if(typeof render === "function") render();
+
+      if(typeof render === "function"){
+        render();
+      }
+
       return;
     }
 
@@ -154,16 +173,22 @@
         lastSeen: Date.now()
       });
 
-      if(typeof render === "function") render();
+      if(typeof render === "function"){
+        render();
+      }
+
       return;
     }
 
     const time = formatTime(remain);
+
     hud.style.display = "block";
     hud.textContent = "🟢 HUNTER 残り " + time;
     setText("hunterTimer", time);
 
-    if(typeof render === "function") render();
+    if(typeof render === "function"){
+      render();
+    }
   }
 
   async function start(){
@@ -199,7 +224,10 @@
 
       playerRef.get().then(snap => {
         const player = snap.val();
-        if(player) applyRole(player, playerRef);
+
+        if(player){
+          applyRole(player, playerRef);
+        }
       });
     }, 1000);
 

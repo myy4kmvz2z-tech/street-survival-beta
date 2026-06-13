@@ -1086,7 +1086,7 @@ window.addEventListener("load", () => {
   }, 800);
 });
 /* =====================================================
-  STREET SURVIVAL PLAYER HUNTER TIMER v31
+  STREET SURVIVAL PLAYER HUNTER TIMER v32
   HUNTER残り時間表示 / 10分後RUNNER自動復帰
 ===================================================== */
 
@@ -1094,9 +1094,12 @@ window.addEventListener("load", () => {
   let ssHunterTimerPlayerRef = null;
   let ssHunterTimerLatestPlayer = null;
   let ssHunterTimerStarted = false;
+  let ssHunterReturnLock = false;
 
   function ssHunterLog(msg){
-    if(typeof log === "function"){
+    if(typeof addLog === "function"){
+      addLog(msg);
+    }else if(typeof log === "function"){
       log(msg);
     }else{
       console.log(msg);
@@ -1104,6 +1107,12 @@ window.addEventListener("load", () => {
   }
 
   function ssHunterGetDb(){
+    try{
+      if(typeof SS_FINAL_DB !== "undefined" && SS_FINAL_DB){
+        return SS_FINAL_DB;
+      }
+    }catch(e){}
+
     try{
       if(typeof ssFirebasePlayerDb !== "undefined" && ssFirebasePlayerDb){
         return ssFirebasePlayerDb;
@@ -1150,32 +1159,44 @@ window.addEventListener("load", () => {
     hud.style.zIndex = "99999";
     hud.style.padding = "14px";
     hud.style.borderRadius = "16px";
-    hud.style.background = "rgba(120, 0, 0, 0.92)";
+    hud.style.background = "rgba(120, 0, 0, 0.94)";
     hud.style.color = "#fff";
     hud.style.fontWeight = "900";
     hud.style.textAlign = "center";
     hud.style.fontSize = "18px";
     hud.style.boxShadow = "0 0 24px rgba(255,0,0,.45)";
     hud.style.display = "none";
+    hud.style.border = "2px solid rgba(255,255,255,.35)";
 
     document.body.appendChild(hud);
     return hud;
   }
 
-  function ssHunterSetRoleText(role){
-    const ids = [
-      "roleText",
-      "roleLabel",
-      "playerRole",
-      "statusRole",
-      "mainRole",
-      "roleBadge"
-    ];
+  function ssHunterSetText(id, text){
+    const el = document.getElementById(id);
+    if(el) el.textContent = text;
+  }
 
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.textContent = role;
-    });
+  function ssHunterSetRoleUi(role){
+    const upperRole = String(role || "RUNNER").toUpperCase();
+
+    ssHunterSetText("roleBadge", upperRole);
+    ssHunterSetText("statusTitle", upperRole);
+
+    const badge = document.getElementById("roleBadge");
+    if(badge){
+      badge.className = "badge " + (upperRole === "HUNTER" ? "hunter" : "runner");
+    }
+
+    const statusIcon = document.getElementById("statusIcon");
+    if(statusIcon){
+      statusIcon.textContent = upperRole === "HUNTER" ? "🟢" : "🔵";
+    }
+
+    const statusSub = document.getElementById("statusSub");
+    if(statusSub){
+      statusSub.textContent = upperRole === "HUNTER" ? "🎯 追跡中" : "🏃 生存中";
+    }
   }
 
   function ssHunterFormatTime(ms){
@@ -1187,6 +1208,9 @@ window.addEventListener("load", () => {
 
   async function ssHunterReturnRunner(){
     if(!ssHunterTimerPlayerRef) return;
+    if(ssHunterReturnLock) return;
+
+    ssHunterReturnLock = true;
 
     try{
       await ssHunterTimerPlayerRef.update({
@@ -1196,11 +1220,15 @@ window.addEventListener("load", () => {
         lastSeen: Date.now()
       });
 
-      ssHunterLog("HUNTER時間終了 → RUNNERへ戻りました");
+      ssHunterLog("⏰ HUNTER時間終了 → RUNNERへ戻りました");
     }catch(e){
       console.error(e);
       ssHunterLog("HUNTER自動復帰エラー: " + e.message);
     }
+
+    setTimeout(() => {
+      ssHunterReturnLock = false;
+    }, 3000);
   }
 
   function ssHunterRender(){
@@ -1208,10 +1236,11 @@ window.addEventListener("load", () => {
     const player = ssHunterTimerLatestPlayer || {};
     const role = String(player.role || "RUNNER").toUpperCase();
 
-    ssHunterSetRoleText(role);
+    ssHunterSetRoleUi(role);
 
     if(role !== "HUNTER"){
       hud.style.display = "none";
+      ssHunterSetText("hunterTimer", "-");
       return;
     }
 
@@ -1220,6 +1249,7 @@ window.addEventListener("load", () => {
     if(!endsAt){
       hud.style.display = "block";
       hud.textContent = "🟢 HUNTER MODE";
+      ssHunterSetText("hunterTimer", "HUNTER");
       return;
     }
 
@@ -1228,12 +1258,16 @@ window.addEventListener("load", () => {
     if(remain <= 0){
       hud.style.display = "block";
       hud.textContent = "🔵 RUNNERへ戻ります...";
+      ssHunterSetText("hunterTimer", "0:00");
       ssHunterReturnRunner();
       return;
     }
 
+    const text = ssHunterFormatTime(remain);
+
     hud.style.display = "block";
-    hud.textContent = "🟢 HUNTER 残り " + ssHunterFormatTime(remain);
+    hud.textContent = "🟢 HUNTER 残り " + text;
+    ssHunterSetText("hunterTimer", text);
   }
 
   function ssHunterStartTimer(){
@@ -1258,10 +1292,10 @@ window.addEventListener("load", () => {
 
     setInterval(ssHunterRender, 1000);
 
-    ssHunterLog("HUNTERタイマー開始 v31: " + playerId);
+    ssHunterLog("✅ HUNTERタイマー開始 v32: " + playerId);
   }
 
   window.addEventListener("load", () => {
-    setTimeout(ssHunterStartTimer, 1500);
+    setTimeout(ssHunterStartTimer, 1800);
   });
 })();

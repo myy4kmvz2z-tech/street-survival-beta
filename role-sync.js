@@ -1,7 +1,8 @@
-/* ROLE SYNC v1 - player role watcher */
+/* ROLE SYNC v2 - auto register + hunter timer */
 
 (function(){
   let started = false;
+  let playerRef = null;
 
   function logMsg(msg){
     if(typeof addLog === "function"){
@@ -21,19 +22,19 @@
   }
 
   function getPlayerId(){
-    return localStorage.getItem("street_survival_player_id");
+    let id = localStorage.getItem("street_survival_player_id");
+
+    if(!id){
+      id = "player_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      localStorage.setItem("street_survival_player_id", id);
+    }
+
+    return id;
   }
 
   function setText(id, text){
     const el = document.getElementById(id);
     if(el) el.textContent = text;
-  }
-
-  function formatTime(ms){
-    const sec = Math.max(0, Math.ceil(ms / 1000));
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return m + ":" + String(s).padStart(2, "0");
   }
 
   function ensureHud(){
@@ -58,6 +59,43 @@
     document.body.appendChild(hud);
 
     return hud;
+  }
+
+  function formatTime(ms){
+    const sec = Math.max(0, Math.ceil(ms / 1000));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + ":" + String(s).padStart(2, "0");
+  }
+
+  async function ensurePlayerData(ref, playerId){
+    const snap = await ref.get();
+
+    if(snap.exists()) return;
+
+    const nameInput = document.getElementById("playerName");
+    const name = nameInput && nameInput.value ? nameInput.value : "RED";
+
+    await ref.set({
+      id: playerId,
+      name: name,
+      role: "RUNNER",
+      hp: 100,
+      points: 0,
+      area: "UNKNOWN",
+      status: "ONLINE",
+      lastSeen: Date.now(),
+      createdAt: Date.now()
+    });
+
+    try{
+      ref.onDisconnect().update({
+        status: "OFFLINE",
+        lastSeen: Date.now()
+      });
+    }catch(e){}
+
+    logMsg("✅ 自分のFirebaseデータ作成: " + playerId);
   }
 
   function applyRole(player, ref){
@@ -128,38 +166,44 @@
     if(typeof render === "function") render();
   }
 
-  function start(){
+  async function start(){
     if(started) return;
 
     const db = getDb();
-    const playerId = getPlayerId();
 
-    if(!db || !playerId){
+    if(!db){
       setTimeout(start, 1000);
       return;
     }
 
     started = true;
 
-    const ref = db.ref("streetSurvival/players/" + playerId);
+    const playerId = getPlayerId();
+    playerRef = db.ref("streetSurvival/players/" + playerId);
 
-    ref.on("value", snap => {
+    await ensurePlayerData(playerRef, playerId);
+
+    playerRef.on("value", snap => {
       const player = snap.val();
+
       if(!player){
         logMsg("⚠️ 自分のFirebaseデータなし");
         return;
       }
-      applyRole(player, ref);
+
+      applyRole(player, playerRef);
     });
 
     setInterval(() => {
-      ref.get().then(snap => {
+      if(!playerRef) return;
+
+      playerRef.get().then(snap => {
         const player = snap.val();
-        if(player) applyRole(player, ref);
+        if(player) applyRole(player, playerRef);
       });
     }, 1000);
 
-    logMsg("✅ ROLE同期開始 role-sync.js: " + playerId);
+    logMsg("✅ ROLE同期開始 role-sync.js v2: " + playerId);
   }
 
   window.addEventListener("load", () => {

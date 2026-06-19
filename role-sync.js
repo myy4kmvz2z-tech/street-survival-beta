@@ -1,8 +1,9 @@
-/* ROLE SYNC v2 - auto register + hunter timer */
+/* ROLE SYNC v3 - auto register + hunter timer + real player count */
 
 (function(){
   let started = false;
   let playerRef = null;
+  let playersRef = null;
 
   function logMsg(msg){
     if(typeof addLog === "function"){
@@ -18,7 +19,6 @@
         return firebase.database();
       }
     }catch(e){}
-
     return null;
   }
 
@@ -38,9 +38,49 @@
     if(el) el.textContent = text;
   }
 
+  function countOnlinePlayers(players){
+    const now = Date.now();
+    return players.filter(p => {
+      const lastSeen = Number(p.lastSeen || 0);
+      const status = String(p.status || "").toUpperCase();
+      return status !== "OFFLINE" && now - lastSeen < 1000 * 60 * 5;
+    });
+  }
+
+  function updatePlayerCounts(playersObj){
+    const all = Object.values(playersObj || {});
+    const active = countOnlinePlayers(all);
+
+    const total = active.length;
+    const hunters = active.filter(p => String(p.role || "").toUpperCase() === "HUNTER").length;
+    const bosses = active.filter(p => String(p.role || "").toUpperCase() === "BOSS").length;
+    const missions = active.filter(p => String(p.role || "").toUpperCase() === "MISSION").length;
+    const safe = active.filter(p => String(p.area || "").toUpperCase() === "SAFE" || String(p.status || "").toUpperCase() === "SAFE").length;
+    const runners = Math.max(0, total - hunters - bosses - missions);
+
+    if(typeof state !== "undefined"){
+      state.participantCount = total;
+      state.simulatedHunters = hunters;
+      state.simulatedSafe = safe;
+      state.bossActive = bosses > 0 || state.bossActive;
+      state.missionActive = missions > 0 || state.missionActive;
+    }
+
+    setText("totalPlayers", total);
+    setText("totalPlayersFull", total + "人参加中");
+    setText("hunterCount", hunters);
+    setText("runnerCount", runners);
+    setText("bossCount", bosses);
+    setText("missionCount", missions);
+    setText("safeCount", safe);
+
+    if(typeof render === "function"){
+      render();
+    }
+  }
+
   function ensureHud(){
     let hud = document.getElementById("roleSyncHud");
-
     if(hud) return hud;
 
     hud = document.createElement("div");
@@ -62,7 +102,6 @@
     hud.style.border = "2px solid rgba(255,255,255,.35)";
 
     document.body.appendChild(hud);
-
     return hud;
   }
 
@@ -75,11 +114,17 @@
 
   async function ensurePlayerData(ref, playerId){
     const snap = await ref.get();
-
-    if(snap.exists()) return;
-
     const nameInput = document.getElementById("playerName");
     const name = nameInput && nameInput.value ? nameInput.value : "RED";
+
+    if(snap.exists()){
+      await ref.update({
+        name: name,
+        status: "ONLINE",
+        lastSeen: Date.now()
+      });
+      return;
+    }
 
     await ref.set({
       id: playerId,
@@ -113,13 +158,8 @@
       state.me.role = isHunter ? "hunter" : "runner";
       state.me.hunterEndsAt = player.hunterEndsAt || null;
 
-      if(typeof player.hp === "number"){
-        state.me.hp = player.hp;
-      }
-
-      if(typeof player.points === "number"){
-        state.me.points = player.points;
-      }
+      if(typeof player.hp === "number") state.me.hp = player.hp;
+      if(typeof player.points === "number") state.me.points = player.points;
     }
 
     const badge = document.getElementById("roleBadge");
@@ -137,11 +177,7 @@
     if(!isHunter){
       hud.style.display = "none";
       setText("hunterTimer", "-");
-
-      if(typeof render === "function"){
-        render();
-      }
-
+      if(typeof render === "function") render();
       return;
     }
 
@@ -151,11 +187,7 @@
       hud.style.display = "block";
       hud.textContent = "🟢 HUNTER MODE";
       setText("hunterTimer", "HUNTER");
-
-      if(typeof render === "function"){
-        render();
-      }
-
+      if(typeof render === "function") render();
       return;
     }
 
@@ -173,10 +205,7 @@
         lastSeen: Date.now()
       });
 
-      if(typeof render === "function"){
-        render();
-      }
-
+      if(typeof render === "function") render();
       return;
     }
 
@@ -186,9 +215,7 @@
     hud.textContent = "🟢 HUNTER 残り " + time;
     setText("hunterTimer", time);
 
-    if(typeof render === "function"){
-      render();
-    }
+    if(typeof render === "function") render();
   }
 
   async function start(){
@@ -204,7 +231,9 @@
     started = true;
 
     const playerId = getPlayerId();
+
     playerRef = db.ref("streetSurvival/players/" + playerId);
+    playersRef = db.ref("streetSurvival/players");
 
     await ensurePlayerData(playerRef, playerId);
 
@@ -219,19 +248,27 @@
       applyRole(player, playerRef);
     });
 
+    playersRef.on("value", snap => {
+      updatePlayerCounts(snap.val() || {});
+    });
+
     setInterval(() => {
       if(!playerRef) return;
 
+      playerRef.update({
+        status: "ONLINE",
+        lastSeen: Date.now()
+      });
+
       playerRef.get().then(snap => {
         const player = snap.val();
-
         if(player){
           applyRole(player, playerRef);
         }
       });
     }, 1000);
 
-    logMsg("✅ ROLE同期開始 role-sync.js v2: " + playerId);
+    logMsg("✅ ROLE同期開始 role-sync.js v3: " + playerId);
   }
 
   window.addEventListener("load", () => {

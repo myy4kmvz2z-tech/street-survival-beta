@@ -398,7 +398,7 @@ function registerPlayer(){
     lastSeen: Date.now()
   });
 
-  log("PLAYER登録OK: " + playerId);
+  addLog("PLAYER登録OK: " + playerId);
 }
 async function initFirebasePlayer(){
   try{

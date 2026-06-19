@@ -171,6 +171,13 @@ function alertVibration(level){
 
   if(!("vibrate" in navigator)) return;
 
+    if(level === "runner30"){
+    if(now - state.lastVibeAt >= 4000){
+      navigator.vibrate(120);
+      state.lastVibeAt = now;
+    }
+  }
+
   if(level === "runner20"){
     if(now - state.lastVibeAt >= 2500){
       navigator.vibrate([300,150,300,150,300]);

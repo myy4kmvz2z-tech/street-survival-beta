@@ -166,7 +166,39 @@ function bearingMeters(a,b){const latScale=111320,lngScale=111320*Math.cos(a.lat
 function setRadarPos(id,target,visible=true){const el=$(id);if(!el)return;if(!visible){el.classList.add("hidden");return;}el.classList.remove("hidden");const v=bearingMeters(state.me,target);const range=CONFIG.radarRangeM;let x=50+(v.x/range)*42,y=50+(v.y/range)*42;x=clamp(x,8,92);y=clamp(y,8,92);el.style.left=x+"%";el.style.top=y+"%";el.style.transform="translate(-50%,-50%)";}
 function updateRadar(nearest,distance,zone){const radar=$("radar");radar.classList.remove("safe","danger","final");if(zone)radar.classList.add("safe");if(state.cityMode==="FINAL")radar.classList.add("final");if(nearest&&distance<=20)radar.classList.add("danger");setRadarPos("radarOnn",state.zones[0],true);setRadarPos("radarCoffee",state.zones[1],true);setRadarPos("radarFood",state.zones[2],true);setRadarPos("radarHonmachi",state.zones[3],true);setRadarPos("radarShinmachi",state.zones[4],true);setRadarPos("radarBoss",{lat:35.49985,lng:137.50455},state.bossActive);setRadarPos("radarMission",state.zones[3],state.missionActive);$("gameBoss").classList.toggle("hidden",!state.bossActive);$("gameMission").classList.toggle("hidden",!state.missionActive);if(nearest&&nearest.role==="hunter"&&distance<=30){setRadarPos("radarHunter",nearest,true);$("radarWarning").classList.toggle("hidden",distance>CONFIG.battleRangeM);}else{$("radarHunter").classList.add("hidden");$("radarWarning").classList.add("hidden");}$("safePulse").classList.toggle("hidden",!zone);}
 function vibrate(pattern){if("vibrate" in navigator){try{navigator.vibrate(pattern)}catch(e){}}}
-function alertVibration(level){const now=Date.now();let interval=999999,pattern=0;if(level==="hunterSense"){interval=2000;pattern=250}else if(level==="runner30"){interval=5000;pattern=80}else if(level==="runner20"){interval=3000;pattern=120}else if(level==="runner10"){interval=1200;pattern=180}else if(level==="contact"){interval=700;pattern=[120,80,120]}if(pattern&&now-state.lastVibeAt>=interval){vibrate(pattern);state.lastVibeAt=now;}}
+function alertVibration(level){
+  const now = Date.now();
+
+  if(!("vibrate" in navigator)) return;
+
+  if(level === "runner20"){
+    if(now - state.lastVibeAt >= 2500){
+      navigator.vibrate([300,150,300,150,300]);
+      state.lastVibeAt = now;
+    }
+  }
+
+  if(level === "runner10"){
+    if(now - state.lastVibeAt >= 1400){
+      navigator.vibrate([220,80,220,80,220,80,220]);
+      state.lastVibeAt = now;
+    }
+  }
+
+  if(level === "contact"){
+    if(now - state.lastVibeAt >= 800){
+      navigator.vibrate([700]);
+      state.lastVibeAt = now;
+    }
+  }
+
+  if(level === "hunterSense"){
+    if(now - state.lastVibeAt >= 2000){
+      navigator.vibrate(250);
+      state.lastVibeAt = now;
+    }
+  }
+}
 function showFullEvent(icon,title,sub,type=""){const el=$("fullScreenEvent");$("fullEventIcon").textContent=icon;$("fullEventTitle").textContent=title;$("fullEventSub").textContent=sub;el.className=`full-screen-event ${type}`;setTimeout(()=>el.classList.add("hidden"),2200);}
 function updateStatus(cls,icon,title,sub,note){$("statusPanel").className="status-panel "+cls;$("statusIcon").textContent=icon;$("statusTitle").textContent=title;$("statusSub").textContent=sub;$("statusNote").textContent=note;}
 function initMap(){state.map=L.map("realMap").setView([state.me.lat,state.me.lng],17);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(state.map);state.meMarker=L.marker([state.me.lat,state.me.lng]).addTo(state.map).bindPopup("📍 YOU");state.accuracyCircle=L.circle([state.me.lat,state.me.lng],{radius:CONFIG.battleRangeM,color:"#f7c948"}).addTo(state.map);renderZones();renderNpcMarkers();}

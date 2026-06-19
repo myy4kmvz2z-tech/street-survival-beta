@@ -422,6 +422,22 @@ async function initFirebasePlayer(){
     ssFirebasePlayerDb = firebase.database();
     
     registerPlayer();
+
+    firebaseDb.ref("streetSurvival/players").on("value", snap => {
+
+  const players = snap.val() || {};
+  const list = Object.values(players);
+
+  state.participantCount = list.length;
+
+  state.simulatedHunters =
+    list.filter(p => String(p.role).toUpperCase() === "HUNTER").length;
+
+  state.simulatedSafe =
+    list.filter(p => String(p.status).toUpperCase() === "SAFE").length;
+
+  render();
+});
     
     ssFirebasePlayerDb.ref("streetSurvival/currentCommand").on("value", snap=>{
       const cmd = snap.val();
@@ -1702,4 +1718,5 @@ window.addEventListener("load", () => {
     setTimeout(start, 2500);
   });
 })();
+ 
  

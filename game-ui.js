@@ -193,12 +193,10 @@
   }
 
   function updateInfoGrid(){
-    const gps = document.getElementById("gpsStatus");
     const alert = document.getElementById("alertStatus");
     const conn = document.getElementById("connectionStatus");
     const fb = document.getElementById("firebaseStatus");
 
-    if(gps) setText("infoGps", gps.textContent.replace(/^GPS[:：]?\s*/, "") || "確認中");
     if(alert) setText("infoWarning", alert.textContent.replace(/^[^\s]+\s*/, "") || "待機中");
 
     if(conn){

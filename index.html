@@ -198,27 +198,55 @@
   <div class="registration-card">
     <div class="registration-logo">STREET SURVIVAL</div>
     <div class="registration-subtitle">リアル鬼ごっこ型 街サバイバルゲーム</div>
+    <p class="registration-intro">このゲームは街を歩きながら遊ぶ位置情報ゲームです。<br>安全に注意して、運営の指示に従って参加してください。</p>
+
+    <div class="registration-precheck">
+      <div class="registration-precheck-title">✅ 参加前チェック</div>
+
+      <div class="registration-precheck-item">
+        <strong>📍 位置情報を許可してください</strong>
+        <span>ゲーム中に現在地を使います。</span>
+      </div>
+      <button id="gpsCheckBtn" class="registration-action-btn" type="button">📍 位置情報を確認する</button>
+      <div id="gpsCheckStatus" class="registration-status"></div>
+
+      <div class="registration-precheck-item">
+        <strong>🔔 通知を許可してください</strong>
+        <span>イベント速報や緊急停止のお知らせに使います。</span>
+      </div>
+      <button id="notifyCheckBtn" class="registration-action-btn" type="button">🔔 通知を許可する</button>
+      <div id="notifyCheckStatus" class="registration-status"></div>
+
+      <div class="registration-precheck-item registration-precheck-tip">
+        <strong>📱 ホーム画面に追加すると便利です</strong>
+        <span>Safariの共有ボタンから「ホーム画面に追加」できます。</span>
+      </div>
+    </div>
 
     <label class="registration-label" for="nicknameInput">ニックネーム</label>
     <input id="nicknameInput" class="registration-input" type="text" maxlength="20" placeholder="名前を入力" autocomplete="nickname">
 
-    <label class="registration-check">
-      <input id="agreeCheck" type="checkbox">
-      <span>注意事項に同意する</span>
-    </label>
-
     <div class="registration-rules">
-      <div class="registration-rules-title">⚠ 注意事項</div>
+      <div class="registration-rules-title">⚠️ 安全ルール</div>
       <ul>
         <li>走りすぎない</li>
-        <li>車・自転車に注意</li>
+        <li>車・自転車・歩行者に注意</li>
         <li>店舗や通行人の迷惑にならない</li>
+        <li>道路に飛び出さない</li>
         <li>体調が悪い時は参加しない</li>
+        <li>緊急停止が出たらすぐに止まる</li>
+        <li>運営スタッフの指示に従う</li>
       </ul>
     </div>
 
-    <button id="joinButton" class="registration-button" type="button">参加する</button>
+    <label class="registration-check">
+      <input id="agreeCheck" type="checkbox">
+      <span>安全ルールを確認し、同意して参加します</span>
+    </label>
+
+    <button id="joinButton" class="registration-button" type="button">ゲームに参加する</button>
     <div id="registrationMessage" class="registration-message"></div>
+    <p class="registration-footer">うまく動かない場合は、Safariで開き直してください。</p>
   </div>
 </div>
 
@@ -226,7 +254,7 @@
 
 <script src="firebase-config-live.js?v=25"></script>
 <script src="app.js?v=36"></script>
-<script src="player-register.js?v=3"></script>
+<script src="player-register.js?v=4"></script>
 <script src="role-sync.js?v=5"></script>
 <script src="settings-sync.js?v=1"></script>
 <script src="emergency-sync.js?v=1"></script>

@@ -1,4 +1,4 @@
-/* PLAYER REGISTER v1 - 本番用参加者登録 */
+/* PLAYER REGISTER v2 - 本番用 QR参加ページ / 初回案内 v1.0 */
 
 (function(){
   window.SS_PLAYER_REGISTERED = localStorage.getItem("street_survival_registered") === "true";
@@ -59,6 +59,11 @@
     }
   }
 
+  function setStatus(id, text){
+    const el = document.getElementById(id);
+    if(el) el.textContent = text;
+  }
+
   function applyNicknameToGame(){
     const nick = localStorage.getItem("street_survival_nickname") || "RED";
     const playerName = document.getElementById("playerName");
@@ -103,6 +108,55 @@
     el.textContent = "";
   }
 
+  function requestNotificationPermission(){
+    if(typeof Notification === "undefined"){
+      setStatus("notifyCheckStatus", "通知: このブラウザでは未対応の場合があります");
+      return;
+    }
+
+    try{
+      const result = Notification.requestPermission();
+
+      if(result && typeof result.then === "function"){
+        result.then(permission => {
+          if(permission === "granted"){
+            setStatus("notifyCheckStatus", "通知: 許可OK");
+          }else if(permission === "denied"){
+            setStatus("notifyCheckStatus", "通知: 許可されませんでした");
+          }else{
+            setStatus("notifyCheckStatus", "通知: 許可されませんでした");
+          }
+        }).catch(() => {
+          setStatus("notifyCheckStatus", "通知: このブラウザでは未対応の場合があります");
+        });
+        return;
+      }
+
+      if(Notification.permission === "granted"){
+        setStatus("notifyCheckStatus", "通知: 許可OK");
+      }else if(Notification.permission === "denied"){
+        setStatus("notifyCheckStatus", "通知: 許可されませんでした");
+      }else{
+        setStatus("notifyCheckStatus", "通知: 許可されませんでした");
+      }
+    }catch(e){
+      setStatus("notifyCheckStatus", "通知: このブラウザでは未対応の場合があります");
+    }
+  }
+
+  function checkGeolocation(){
+    if(!navigator.geolocation){
+      setStatus("gpsCheckStatus", "位置情報: この端末では未対応");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      () => setStatus("gpsCheckStatus", "位置情報: OK"),
+      () => setStatus("gpsCheckStatus", "位置情報: 許可してください"),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }
+
   async function joinGame(){
     const nicknameInput = document.getElementById("nicknameInput");
     const agreeInput = document.getElementById("agreeCheck");
@@ -112,7 +166,7 @@
     const errors = [];
 
     if(!nickname) errors.push("ニックネームを入力してください");
-    if(!agreed) errors.push("注意事項に同意してください");
+    if(!agreed) errors.push("安全ルールに同意してください");
 
     if(errors.length){
       showRegisterError(errors);
@@ -166,7 +220,7 @@
     }finally{
       if(joinBtn){
         joinBtn.disabled = false;
-        joinBtn.textContent = "参加する";
+        joinBtn.textContent = "ゲームに参加する";
       }
     }
   }
@@ -187,6 +241,16 @@
     const joinBtn = document.getElementById("joinButton");
     if(joinBtn){
       joinBtn.addEventListener("click", joinGame);
+    }
+
+    const notifyBtn = document.getElementById("notifyCheckBtn");
+    if(notifyBtn){
+      notifyBtn.addEventListener("click", requestNotificationPermission);
+    }
+
+    const gpsBtn = document.getElementById("gpsCheckBtn");
+    if(gpsBtn){
+      gpsBtn.addEventListener("click", checkGeolocation);
     }
 
     const resetBtn = document.getElementById("registerResetBtn");

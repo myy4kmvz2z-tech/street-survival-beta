@@ -570,7 +570,82 @@ html.ss-registered #gameScreen {
 #registrationScreen .registration-subtitle {
   font-size: 14px !important;
   color: rgba(255,255,255,0.75) !important;
-  margin-bottom: 24px !important;
+  margin-bottom: 12px !important;
+}
+
+#registrationScreen .registration-intro {
+  margin: 0 0 20px !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+  color: rgba(255,255,255,0.82) !important;
+}
+
+#registrationScreen .registration-precheck {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 18px !important;
+  padding: 16px !important;
+  margin-bottom: 20px !important;
+}
+
+#registrationScreen .registration-precheck-title {
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  margin-bottom: 14px !important;
+  color: #fff !important;
+}
+
+#registrationScreen .registration-precheck-item {
+  background: rgba(0,0,0,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 10px !important;
+}
+
+#registrationScreen .registration-precheck-item strong {
+  display: block !important;
+  font-size: 14px !important;
+  margin-bottom: 4px !important;
+  color: #fff !important;
+}
+
+#registrationScreen .registration-precheck-item span {
+  display: block !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+  color: rgba(255,255,255,0.72) !important;
+}
+
+#registrationScreen .registration-precheck-tip {
+  margin-bottom: 0 !important;
+}
+
+#registrationScreen .registration-action-btn,
+#registrationScreen button.registration-action-btn {
+  width: 100% !important;
+  max-width: none !important;
+  height: 44px !important;
+  margin: 0 0 6px !important;
+  padding: 0 14px !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  border-radius: 14px !important;
+  background: rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+}
+
+#registrationScreen .registration-status {
+  min-height: 18px !important;
+  margin: 0 0 12px !important;
+  font-size: 12px !important;
+  color: rgba(255,255,255,0.78) !important;
+}
+
+#registrationScreen .registration-status:last-of-type {
+  margin-bottom: 0 !important;
 }
 
 #registrationScreen .registration-label {
@@ -599,10 +674,14 @@ html.ss-registered #gameScreen {
 #registrationScreen .registration-check {
   display: flex !important;
   gap: 10px !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   font-size: 14px !important;
   margin-bottom: 18px !important;
   color: #fff !important;
+  padding: 12px !important;
+  border-radius: 14px !important;
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
 }
 
 #registrationScreen .registration-check input {
@@ -648,4 +727,12 @@ html.ss-registered #gameScreen {
   font-size: 13px !important;
   text-align: center !important;
   white-space: pre-line !important;
+}
+
+#registrationScreen .registration-footer {
+  margin: 14px 0 0 !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+  text-align: center !important;
+  color: rgba(255,255,255,0.55) !important;
 }

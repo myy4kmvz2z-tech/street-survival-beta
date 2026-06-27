@@ -93,8 +93,14 @@
     <div id="radioCardText" class="radio-card-text">RADIO待機中</div>
   </div>
 
+  <div id="safeAreaBanner" class="safe-area-banner hidden">
+    <div class="safe-area-banner-title">🛡 SAFEエリア中</div>
+    <div class="safe-area-banner-sub">ここでは安全です</div>
+  </div>
+
   <div class="info-grid">
     <div><span>位置情報</span><b id="locationStatus">取得中</b></div>
+    <div><span>現在エリア</span><b id="areaStatus">確認中</b></div>
     <div><span>接近警告</span><b id="infoWarning">待機中</b></div>
     <div><span>通信</span><b id="infoConnection">確認中</b></div>
   </div>
@@ -282,7 +288,7 @@
 <script src="settings-sync.js?v=1"></script>
 <script src="emergency-sync.js?v=1"></script>
 <script src="game-ui.js?v=2"></script>
-<script src="location-sync.js?v=1"></script>
+<script src="location-sync.js?v=2"></script>
 
 
 <script>

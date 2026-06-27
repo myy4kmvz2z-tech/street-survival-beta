@@ -1054,6 +1054,42 @@ html.ss-registered body {
   text-align: right;
 }
 
+#areaStatus {
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
+.safe-area-banner {
+  background: linear-gradient(180deg, rgba(89, 214, 141, 0.28), rgba(5, 20, 12, 0.95));
+  border: 2px solid rgba(89, 214, 141, 0.55);
+  border-radius: 22px;
+  padding: 20px 18px;
+  text-align: center;
+  box-shadow: 0 0 32px rgba(89, 214, 141, 0.22), 0 12px 32px rgba(0, 0, 0, 0.35);
+  position: relative;
+  z-index: 900;
+}
+
+.safe-area-banner-title {
+  font-size: clamp(24px, 7vw, 32px);
+  font-weight: 1000;
+  color: #fff;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 20px rgba(89, 214, 141, 0.45);
+}
+
+.safe-area-banner-sub {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.game-screen.in-safe-area .status-hero {
+  border-color: rgba(89, 214, 141, 0.45) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 36px rgba(89, 214, 141, 0.25) !important;
+}
+
 .bottom-tools {
   background: rgba(0, 0, 0, 0.28) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;

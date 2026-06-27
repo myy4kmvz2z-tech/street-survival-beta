@@ -1,7 +1,7 @@
-/* LOCATION SYNC v1.0 - 参加者位置情報 → Firebase */
+/* LOCATION SYNC v2.0 - 位置情報 + エリア判定 */
 
 (function(){
-  const VERSION = 1;
+  const VERSION = 2;
   const SAVE_INTERVAL_MS = 5000;
   const WATCH_OPTIONS = {
     enableHighAccuracy: true,
@@ -10,21 +10,62 @@
   };
 
   /*
-   * 本番座標は後で設定してください。
-   * AREAS_CONFIGURED を true にし、各 lat / lng / radiusM を入れると判定が有効になります。
+   * エリア座標はここだけ変更すればOK（lat / lng / radiusM）
+   * 座標は仮値です。本番時に Onn / 本町 / 新町 の実座標へ差し替えてください。
    */
-  const AREAS_CONFIGURED = false;
-  const AREA_ZONES = [
-    { key: "onn", name: "Onn SAFE", lat: null, lng: null, radiusM: 50 },
-    { key: "honmachi", name: "本町", lat: null, lng: null, radiusM: 80 },
-    { key: "shinmachi", name: "新町", lat: null, lng: null, radiusM: 80 }
-  ];
+  const AREA_CONFIG = {
+    onnSafe: {
+      name: "Onn SAFE",
+      label: "🟢 Onn SAFE",
+      lat: 35.495000,
+      lng: 137.500000,
+      radiusM: 80,
+      isSafe: true
+    },
+    honmachi: {
+      name: "本町",
+      label: "🟡 本町",
+      lat: 35.495500,
+      lng: 137.501000,
+      radiusM: 180,
+      isSafe: false
+    },
+    shinmachi: {
+      name: "新町",
+      label: "🔴 新町",
+      lat: 35.496000,
+      lng: 137.502000,
+      radiusM: 180,
+      isSafe: false
+    }
+  };
+
+  const AREA_ORDER = ["onnSafe", "honmachi", "shinmachi"];
+
+  const AREA_PENDING = {
+    key: "pending",
+    name: "確認中",
+    label: "確認中",
+    distanceM: null,
+    isSafe: false
+  };
+
+  const AREA_OUTSIDE = {
+    key: "outside",
+    name: "エリア外",
+    label: "⚪ エリア外",
+    distanceM: null,
+    isSafe: false
+  };
+
+  window.STREET_SURVIVAL_AREA_CONFIG = AREA_CONFIG;
 
   let started = false;
   let watchId = null;
   let playerRef = null;
   let lastSaveAt = 0;
-  let lastArea = "確認中";
+  let lastAreaKey = null;
+  let currentAreaResult = AREA_PENDING;
 
   function logMsg(msg){
     if(typeof addLog === "function"){
@@ -63,46 +104,82 @@
     return localStorage.getItem("street_survival_registered") === "true";
   }
 
-  function haversineM(lat1, lng1, lat2, lng2){
+  window.getDistanceMeters = function(lat1, lng1, lat2, lng2){
     const R = 6371000;
     const toRad = deg => deg * Math.PI / 180;
-    const dLat = toRad(lat2 - lat1);
-    const dLng = toRad(lng2 - lng1);
+    const dLat = toRad(Number(lat2) - Number(lat1));
+    const dLng = toRad(Number(lng2) - Number(lng1));
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.cos(toRad(Number(lat1))) * Math.cos(toRad(Number(lat2))) *
       Math.sin(dLng / 2) * Math.sin(dLng / 2);
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  }
+  };
 
   window.detectArea = function(lat, lng){
-    if(!AREAS_CONFIGURED){
-      return "確認中";
-    }
-
     const latitude = Number(lat);
     const longitude = Number(lng);
 
     if(!Number.isFinite(latitude) || !Number.isFinite(longitude)){
-      return "確認中";
+      return Object.assign({}, AREA_PENDING);
     }
 
-    for(let i = 0; i < AREA_ZONES.length; i++){
-      const zone = AREA_ZONES[i];
-      if(zone.lat == null || zone.lng == null || !zone.radiusM){
+    for(let i = 0; i < AREA_ORDER.length; i++){
+      const key = AREA_ORDER[i];
+      const zone = AREA_CONFIG[key];
+      if(!zone || !Number.isFinite(zone.lat) || !Number.isFinite(zone.lng) || !zone.radiusM){
         continue;
       }
 
-      const dist = haversineM(latitude, longitude, zone.lat, zone.lng);
-      if(dist <= zone.radiusM){
-        return zone.name;
+      const distanceM = window.getDistanceMeters(latitude, longitude, zone.lat, zone.lng);
+      if(distanceM <= zone.radiusM){
+        return {
+          key: key,
+          name: zone.name,
+          label: zone.label,
+          distanceM: Math.round(distanceM),
+          isSafe: !!zone.isSafe
+        };
       }
     }
 
-    return "エリア外";
+    return Object.assign({}, AREA_OUTSIDE);
+  };
+
+  window.updateAreaUI = function(areaResult){
+    const area = areaResult || currentAreaResult || AREA_PENDING;
+    currentAreaResult = area;
+    window.STREET_SURVIVAL_CURRENT_AREA = area;
+
+    setText("areaStatus", area.label || area.name || "確認中");
+
+    const banner = document.getElementById("safeAreaBanner");
+    if(banner){
+      if(area.isSafe){
+        banner.classList.remove("hidden");
+      }else{
+        banner.classList.add("hidden");
+      }
+    }
+
+    const gameScreen = document.getElementById("gameScreen");
+    if(gameScreen){
+      gameScreen.classList.toggle("in-safe-area", !!area.isSafe);
+    }
   };
 
   function setLocationStatus(text){
     setText("locationStatus", text);
+  }
+
+  function logAreaChange(areaResult){
+    if(!areaResult || areaResult.key === lastAreaKey){
+      return;
+    }
+
+    lastAreaKey = areaResult.key;
+    const msg = "エリア変更: " + (areaResult.label || areaResult.name);
+    logMsg(msg);
+    console.log(msg, areaResult);
   }
 
   function mapGeoError(err){
@@ -140,8 +217,8 @@
     }
   }
 
-  async function saveLocation(lat, lng, accuracy, area){
-    if(!playerRef) return;
+  async function saveLocation(lat, lng, accuracy, areaResult){
+    if(!playerRef || !areaResult) return;
 
     const now = Date.now();
     if(now - lastSaveAt < SAVE_INTERVAL_MS){
@@ -158,7 +235,11 @@
           accuracy: accuracy,
           updatedAt: now
         },
-        area: area,
+        area: areaResult.name,
+        areaKey: areaResult.key,
+        areaLabel: areaResult.label,
+        isSafe: areaResult.isSafe,
+        areaUpdatedAt: now,
         updatedAt: now
       });
     }catch(e){
@@ -172,37 +253,25 @@
     const lat = coords.latitude;
     const lng = coords.longitude;
     const accuracy = coords.accuracy;
-    const timestamp = pos.timestamp;
 
     if(!Number.isFinite(lat) || !Number.isFinite(lng)){
       handleGeoError({ code: 2, message: "invalid coordinates" });
       return;
     }
 
-    const area = window.detectArea(lat, lng);
-    lastArea = area;
+    const areaResult = window.detectArea(lat, lng);
+    logAreaChange(areaResult);
+    window.updateAreaUI(areaResult);
 
     const accText = Number.isFinite(accuracy) ? Math.round(accuracy) : "?";
     setLocationStatus("OK ±" + accText + "m");
 
-    if(area !== "確認中"){
-      setLocationStatus("OK ±" + accText + "m · " + area);
-    }
-
-    saveLocation(lat, lng, accuracy, area);
+    saveLocation(lat, lng, accuracy, areaResult);
 
     if(typeof state !== "undefined" && state.me){
       state.me.lat = lat;
       state.me.lng = lng;
     }
-
-    console.log("位置情報:", {
-      lat: lat,
-      lng: lng,
-      accuracy: accuracy,
-      timestamp: timestamp,
-      area: area
-    });
   }
 
   function startWatch(){
@@ -220,6 +289,7 @@
     }
 
     setLocationStatus("取得中");
+    window.updateAreaUI(AREA_PENDING);
     logMsg("位置情報: 取得開始（HTTPS + 許可が必要です）");
 
     watchId = navigator.geolocation.watchPosition(onPosition, handleGeoError, WATCH_OPTIONS);
@@ -256,15 +326,21 @@
     started = true;
     playerRef = db.ref("streetSurvival/players/" + playerId);
 
+    const now = Date.now();
     try{
       await playerRef.update({
-        area: lastArea || "確認中",
-        updatedAt: Date.now()
+        area: AREA_PENDING.name,
+        areaKey: AREA_PENDING.key,
+        areaLabel: AREA_PENDING.label,
+        isSafe: AREA_PENDING.isSafe,
+        areaUpdatedAt: now,
+        updatedAt: now
       });
     }catch(e){
       console.warn("位置情報: 初期area保存失敗", e);
     }
 
+    window.updateAreaUI(AREA_PENDING);
     startWatch();
     logMsg("✅ 位置情報同期開始 location-sync.js v" + VERSION);
   }
@@ -278,6 +354,7 @@
 
     window.addEventListener("ss-player-registered", () => {
       started = false;
+      lastAreaKey = null;
       setTimeout(start, 800);
     }, { once: true });
   }

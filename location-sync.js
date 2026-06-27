@@ -1,7 +1,7 @@
-/* LOCATION SYNC v2.0 - 位置情報 + エリア判定 */
+/* LOCATION SYNC v3.0 - 位置情報 + エリア判定 + SAFEゾーン連動 */
 
 (function(){
-  const VERSION = 2;
+  const VERSION = 3;
   const SAVE_INTERVAL_MS = 5000;
   const WATCH_OPTIONS = {
     enableHighAccuracy: true,
@@ -11,7 +11,7 @@
 
   /*
    * エリア座標はここだけ変更すればOK（lat / lng / radiusM）
-   * 座標は仮値です。本番時に Onn / 本町 / 新町 の実座標へ差し替えてください。
+   * SAFEゾーンは streetSurvival/safeZones が最優先（safe-zone-sync.js）
    */
   const AREA_CONFIG = {
     onnSafe: {
@@ -104,6 +104,14 @@
     return localStorage.getItem("street_survival_registered") === "true";
   }
 
+  function getAreaTrackingKey(areaResult){
+    if(!areaResult) return "";
+    if(areaResult.key === "safeZone" && areaResult.safeZone){
+      return "safeZone:" + areaResult.safeZone.zoneId;
+    }
+    return areaResult.key || "";
+  }
+
   window.getDistanceMeters = function(lat1, lng1, lat2, lng2){
     const R = 6371000;
     const toRad = deg => deg * Math.PI / 180;
@@ -115,7 +123,7 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
-  window.detectArea = function(lat, lng){
+  window.detectLegacyArea = function(lat, lng){
     const latitude = Number(lat);
     const longitude = Number(lng);
 
@@ -145,25 +153,59 @@
     return Object.assign({}, AREA_OUTSIDE);
   };
 
+  window.detectArea = function(lat, lng){
+    const latitude = Number(lat);
+    const longitude = Number(lng);
+
+    if(!Number.isFinite(latitude) || !Number.isFinite(longitude)){
+      return Object.assign({}, AREA_PENDING);
+    }
+
+    if(typeof window.findSafeZone === "function"){
+      const safeZone = window.findSafeZone(latitude, longitude);
+      if(safeZone){
+        return {
+          key: "safeZone",
+          name: safeZone.name,
+          label: safeZone.label,
+          distanceM: safeZone.distanceM,
+          isSafe: true,
+          isHealer: !!safeZone.isHealer,
+          safeZone: safeZone
+        };
+      }
+    }
+
+    return window.detectLegacyArea(latitude, longitude);
+  };
+
   window.updateAreaUI = function(areaResult){
     const area = areaResult || currentAreaResult || AREA_PENDING;
     currentAreaResult = area;
     window.STREET_SURVIVAL_CURRENT_AREA = area;
 
-    setText("areaStatus", area.label || area.name || "確認中");
+    if(typeof window.updateSafeZoneDisplay === "function"){
+      window.updateSafeZoneDisplay(area);
+    }else{
+      setText("areaStatus", area.label || area.name || "確認中");
 
-    const banner = document.getElementById("safeAreaBanner");
-    if(banner){
-      if(area.isSafe){
-        banner.classList.remove("hidden");
-      }else{
-        banner.classList.add("hidden");
+      const banner = document.getElementById("safeAreaBanner");
+      if(banner){
+        if(area.isSafe){
+          banner.classList.remove("hidden");
+        }else{
+          banner.classList.add("hidden");
+        }
+      }
+
+      const gameScreen = document.getElementById("gameScreen");
+      if(gameScreen){
+        gameScreen.classList.toggle("in-safe-area", !!area.isSafe);
       }
     }
 
-    const gameScreen = document.getElementById("gameScreen");
-    if(gameScreen){
-      gameScreen.classList.toggle("in-safe-area", !!area.isSafe);
+    if(area.key !== "safeZone"){
+      setText("areaStatus", area.label || area.name || "確認中");
     }
   };
 
@@ -172,14 +214,19 @@
   }
 
   function logAreaChange(areaResult){
-    if(!areaResult || areaResult.key === lastAreaKey){
+    const trackingKey = getAreaTrackingKey(areaResult);
+    if(!trackingKey || trackingKey === lastAreaKey){
       return;
     }
 
-    lastAreaKey = areaResult.key;
-    const msg = "エリア変更: " + (areaResult.label || areaResult.name);
-    logMsg(msg);
-    console.log(msg, areaResult);
+    if(areaResult.key !== "safeZone"){
+      lastAreaKey = trackingKey;
+      const msg = "エリア変更: " + (areaResult.label || areaResult.name);
+      logMsg(msg);
+      console.log(msg, areaResult);
+    }else{
+      lastAreaKey = trackingKey;
+    }
   }
 
   function mapGeoError(err){
@@ -217,6 +264,34 @@
     }
   }
 
+  function buildPlayerUpdate(lat, lng, accuracy, areaResult, now){
+    const safeFields = typeof window.buildSafeZonePlayerFields === "function"
+      ? window.buildSafeZonePlayerFields(areaResult)
+      : {
+          isSafe: !!areaResult.isSafe,
+          safeZoneId: null,
+          safeZoneName: null,
+          safeZoneLabel: null,
+          safeZoneDistanceM: null,
+          isHealer: false,
+          healerZoneName: null
+        };
+
+    return Object.assign({
+      location: {
+        lat: lat,
+        lng: lng,
+        accuracy: accuracy,
+        updatedAt: now
+      },
+      area: areaResult.name,
+      areaKey: areaResult.key,
+      areaLabel: areaResult.label,
+      areaUpdatedAt: now,
+      updatedAt: now
+    }, safeFields);
+  }
+
   async function saveLocation(lat, lng, accuracy, areaResult){
     if(!playerRef || !areaResult) return;
 
@@ -228,20 +303,7 @@
     lastSaveAt = now;
 
     try{
-      await playerRef.update({
-        location: {
-          lat: lat,
-          lng: lng,
-          accuracy: accuracy,
-          updatedAt: now
-        },
-        area: areaResult.name,
-        areaKey: areaResult.key,
-        areaLabel: areaResult.label,
-        isSafe: areaResult.isSafe,
-        areaUpdatedAt: now,
-        updatedAt: now
-      });
+      await playerRef.update(buildPlayerUpdate(lat, lng, accuracy, areaResult, now));
     }catch(e){
       console.warn("位置情報: Firebase保存失敗", e);
       logMsg("位置情報: Firebase保存失敗");
@@ -260,6 +322,11 @@
     }
 
     const areaResult = window.detectArea(lat, lng);
+
+    if(typeof window.onSafeZoneAreaChange === "function"){
+      window.onSafeZoneAreaChange(areaResult);
+    }
+
     logAreaChange(areaResult);
     window.updateAreaUI(areaResult);
 
@@ -327,15 +394,11 @@
     playerRef = db.ref("streetSurvival/players/" + playerId);
 
     const now = Date.now();
+    const initialFields = buildPlayerUpdate(null, null, null, AREA_PENDING, now);
+    delete initialFields.location;
+
     try{
-      await playerRef.update({
-        area: AREA_PENDING.name,
-        areaKey: AREA_PENDING.key,
-        areaLabel: AREA_PENDING.label,
-        isSafe: AREA_PENDING.isSafe,
-        areaUpdatedAt: now,
-        updatedAt: now
-      });
+      await playerRef.update(initialFields);
     }catch(e){
       console.warn("位置情報: 初期area保存失敗", e);
     }

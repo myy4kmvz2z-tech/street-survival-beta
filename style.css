@@ -1083,6 +1083,22 @@ html.ss-registered body {
   font-size: 15px;
   font-weight: 800;
   color: rgba(255, 255, 255, 0.82);
+  white-space: pre-line;
+}
+
+.safe-area-banner.healer-zone {
+  background: linear-gradient(180deg, rgba(255, 120, 150, 0.24), rgba(30, 8, 16, 0.95));
+  border-color: rgba(255, 120, 150, 0.55);
+  box-shadow: 0 0 32px rgba(255, 120, 150, 0.22), 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.safe-area-banner.healer-zone .safe-area-banner-title {
+  text-shadow: 0 0 20px rgba(255, 120, 150, 0.45);
+}
+
+.game-screen.in-healer-zone .status-hero {
+  border-color: rgba(255, 120, 150, 0.45) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 36px rgba(255, 120, 150, 0.22) !important;
 }
 
 .game-screen.in-safe-area .status-hero {

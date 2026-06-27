@@ -81,9 +81,9 @@
   }
 
   function showGame(){
-    const registerScreen = document.getElementById("registerScreen");
+    const registrationScreen = document.getElementById("registrationScreen");
     const gameScreen = document.getElementById("gameScreen");
-    if(registerScreen) registerScreen.classList.add("hidden");
+    if(registrationScreen) registrationScreen.classList.add("hidden");
     if(gameScreen) gameScreen.classList.remove("hidden");
     document.documentElement.classList.add("ss-registered");
     window.SS_PLAYER_REGISTERED = true;
@@ -91,32 +91,30 @@
   }
 
   function showRegister(){
-    const registerScreen = document.getElementById("registerScreen");
+    const registrationScreen = document.getElementById("registrationScreen");
     const gameScreen = document.getElementById("gameScreen");
-    if(registerScreen) registerScreen.classList.remove("hidden");
+    if(registrationScreen) registrationScreen.classList.remove("hidden");
     if(gameScreen) gameScreen.classList.add("hidden");
     document.documentElement.classList.remove("ss-registered");
     window.SS_PLAYER_REGISTERED = false;
   }
 
   function showRegisterError(messages){
-    const el = document.getElementById("registerError");
+    const el = document.getElementById("registrationMessage");
     if(!el) return;
     el.textContent = messages.join("\n");
-    el.classList.remove("hidden");
   }
 
   function hideRegisterError(){
-    const el = document.getElementById("registerError");
+    const el = document.getElementById("registrationMessage");
     if(!el) return;
     el.textContent = "";
-    el.classList.add("hidden");
   }
 
   async function joinGame(){
-    const nicknameInput = document.getElementById("registerNickname");
-    const agreeInput = document.getElementById("registerAgree");
-    const joinBtn = document.getElementById("registerJoinBtn");
+    const nicknameInput = document.getElementById("nicknameInput");
+    const agreeInput = document.getElementById("agreeCheck");
+    const joinBtn = document.getElementById("joinButton");
     const nickname = nicknameInput ? nicknameInput.value.trim() : "";
     const agreed = agreeInput ? agreeInput.checked : false;
     const errors = [];
@@ -194,7 +192,7 @@
       showRegister();
     }
 
-    const joinBtn = document.getElementById("registerJoinBtn");
+    const joinBtn = document.getElementById("joinButton");
     if(joinBtn){
       joinBtn.addEventListener("click", joinGame);
     }
@@ -204,7 +202,7 @@
       resetBtn.addEventListener("click", resetRegistration);
     }
 
-    const nicknameInput = document.getElementById("registerNickname");
+    const nicknameInput = document.getElementById("nicknameInput");
     if(nicknameInput){
       nicknameInput.addEventListener("keydown", e => {
         if(e.key === "Enter") joinGame();

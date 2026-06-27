@@ -498,196 +498,158 @@ body.low-power *{
   scroll-behavior:auto !important;
 }
 
-/* 参加者登録画面（#registerScreen 専用・既存ゲームCSSより優先） */
-html:not(.ss-registered),
-html:not(.ss-registered) body{
-  margin:0!important;
-  padding:0!important;
-  min-height:100%!important;
-  min-height:100vh!important;
-  min-height:100dvh!important;
-  width:100%!important;
-  overflow-x:hidden;
-  background:#06120e!important;
-  background:radial-gradient(circle at top,#0f3d2e 0%,#06120e 55%,#020504 100%)!important;
-  color:#fff!important;
+/* 参加者登録画面（#registrationScreen 専用） */
+html,
+body{
+  margin:0;
+  padding:0;
+  min-height:100%;
 }
 
 #gameScreen{display:none}
-html.ss-registered #registerScreen{display:none!important}
+html.ss-registered #registrationScreen{display:none!important}
 html.ss-registered #gameScreen{display:block}
 
-#registerScreen,
-#registerScreen.register-screen,
-.register-screen#registerScreen{
+html:not(.ss-registered) body{
+  background:#06120e;
+  background:radial-gradient(circle at top,#0f3d2e 0%,#06120e 55%,#020504 100%);
+  color:#fff;
+  overflow-x:hidden;
+}
+
+#registrationScreen.registration-screen{
   position:fixed!important;
   inset:0!important;
   z-index:100001!important;
-  display:flex!important;
-  flex-direction:column!important;
-  justify-content:center!important;
-  align-items:center!important;
-  box-sizing:border-box!important;
   min-height:100vh!important;
   min-height:100dvh!important;
   width:100%!important;
-  margin:0!important;
-  padding:20px!important;
-  overflow-y:auto!important;
-  -webkit-overflow-scrolling:touch;
-  background:#06120e!important;
   background:radial-gradient(circle at top,#0f3d2e 0%,#06120e 55%,#020504 100%)!important;
   color:#fff!important;
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  padding:20px!important;
+  box-sizing:border-box!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch;
 }
 
-#registerScreen .register-card{
+#registrationScreen .registration-card{
   width:100%!important;
   max-width:420px!important;
-  margin:0 auto!important;
+  background:rgba(5,15,12,.94)!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  border-radius:26px!important;
+  padding:26px!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.55)!important;
   box-sizing:border-box!important;
-  background:rgba(5,15,12,.92)!important;
-  border:1px solid rgba(255,255,255,.15)!important;
-  border-radius:24px!important;
-  padding:24px!important;
-  box-shadow:0 20px 60px rgba(0,0,0,.45)!important;
+  color:#fff!important;
+  flex-shrink:0!important;
+  position:relative!important;
+  margin:0!important;
+}
+
+#registrationScreen .registration-logo{
+  font-size:30px!important;
+  font-weight:900!important;
+  letter-spacing:1px!important;
+  margin-bottom:8px!important;
   color:#fff!important;
 }
 
-#registerScreen .register-title{
-  margin:0 0 10px!important;
-  text-align:center!important;
-  font-size:clamp(28px,7vw,34px)!important;
-  letter-spacing:.06em!important;
-  line-height:1.15!important;
-  color:#fff!important;
-}
-
-#registerScreen .register-subtitle{
-  margin:0 0 24px!important;
-  text-align:center!important;
+#registrationScreen .registration-subtitle{
   font-size:14px!important;
-  line-height:1.5!important;
-  color:rgba(255,255,255,.72)!important;
+  color:rgba(255,255,255,.75)!important;
+  margin-bottom:24px!important;
 }
 
-#registerScreen .register-label{
+#registrationScreen .registration-label{
   display:block!important;
-  margin-bottom:10px!important;
-  font-size:15px!important;
-  font-weight:800!important;
+  font-size:14px!important;
+  font-weight:700!important;
+  margin-bottom:8px!important;
   color:#fff!important;
 }
 
-#registerScreen .register-input,
-#registerScreen input.register-input{
-  display:block!important;
+#registrationScreen .registration-input,
+#registrationScreen input.registration-input{
   width:100%!important;
   max-width:none!important;
-  margin:0 0 16px!important;
-  padding:16px!important;
-  font-size:18px!important;
-  border-radius:16px!important;
+  height:48px!important;
+  border-radius:14px!important;
   border:1px solid rgba(255,255,255,.2)!important;
-  background:#050607!important;
+  background:rgba(0,0,0,.45)!important;
   color:#fff!important;
+  padding:0 14px!important;
+  font-size:16px!important;
+  box-sizing:border-box!important;
+  margin-bottom:16px!important;
 }
 
-#registerScreen .register-input::placeholder{
+#registrationScreen .registration-input::placeholder{
   color:rgba(255,255,255,.45)!important;
 }
 
-#registerScreen .register-input:focus{
-  outline:none!important;
-  border-color:#f7c948!important;
-  box-shadow:0 0 0 3px rgba(247,201,72,.22)!important;
-}
-
-#registerScreen .register-join,
-#registerScreen button.register-join{
-  width:100%!important;
-  max-width:none!important;
-  margin:0 0 20px!important;
-  padding:17px 16px!important;
-  font-size:18px!important;
-  font-weight:1000!important;
-  border-radius:18px!important;
-  border:none!important;
-  background:#f7c948!important;
-  color:#111!important;
-  box-shadow:0 10px 28px rgba(247,201,72,.28)!important;
+#registrationScreen .registration-check{
+  display:flex!important;
+  gap:10px!important;
+  align-items:center!important;
+  font-size:14px!important;
+  margin-bottom:18px!important;
+  color:#fff!important;
   cursor:pointer!important;
 }
 
-#registerScreen .register-join:disabled{
-  opacity:.72!important;
+#registrationScreen .registration-check input{
+  width:20px!important;
+  height:20px!important;
+  max-width:none!important;
+  margin:0!important;
+  accent-color:#f6c945!important;
 }
 
-#registerScreen .register-error{
-  white-space:pre-line!important;
-  background:rgba(255,77,94,.18)!important;
-  border:1px solid #ff4d5e!important;
-  color:#ffd6da!important;
-  border-radius:14px!important;
-  padding:12px 14px!important;
-  margin-bottom:12px!important;
-  font-size:14px!important;
-  font-weight:700!important;
-  line-height:1.5!important;
-}
-
-#registerScreen .register-notice{
-  background:rgba(0,0,0,.35)!important;
-  border:1px solid rgba(255,255,255,.12)!important;
+#registrationScreen .registration-rules{
+  background:rgba(255,255,255,.08)!important;
   border-radius:16px!important;
-  padding:16px!important;
-  margin-bottom:16px!important;
+  padding:14px 16px!important;
+  font-size:13px!important;
+  line-height:1.7!important;
+  margin-bottom:20px!important;
   color:rgba(255,255,255,.82)!important;
 }
 
-#registerScreen .register-notice strong{
-  display:block!important;
-  margin-bottom:10px!important;
-  font-size:15px!important;
-  color:#fff!important;
-}
-
-#registerScreen .register-notice ul{
-  margin:0!important;
+#registrationScreen .registration-rules ul{
+  margin:8px 0 0!important;
   padding-left:20px!important;
-  color:rgba(255,255,255,.78)!important;
-  font-size:14px!important;
-  line-height:1.75!important;
 }
 
-#registerScreen .register-notice li+li{
-  margin-top:4px!important;
-}
-
-#registerScreen .register-agree{
-  display:flex!important;
-  align-items:center!important;
-  gap:12px!important;
-  font-size:15px!important;
-  font-weight:700!important;
-  cursor:pointer!important;
-  padding:14px!important;
-  border-radius:16px!important;
-  background:rgba(255,255,255,.06)!important;
-  border:1px solid rgba(255,255,255,.16)!important;
-  color:#fff!important;
-}
-
-#registerScreen .register-agree span{
-  color:#fff!important;
-}
-
-#registerScreen .register-agree input{
-  margin:0!important;
-  width:22px!important;
-  height:22px!important;
+#registrationScreen .registration-button,
+#registrationScreen button.registration-button{
+  width:100%!important;
   max-width:none!important;
-  flex-shrink:0!important;
-  accent-color:#f7c948!important;
+  height:52px!important;
+  border:none!important;
+  border-radius:16px!important;
+  background:#f6c945!important;
+  color:#111!important;
+  font-size:18px!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+  padding:0!important;
+}
+
+#registrationScreen .registration-button:disabled{
+  opacity:.72!important;
+}
+
+#registrationScreen .registration-message{
+  margin-top:12px!important;
+  color:#ffdf6e!important;
+  font-size:13px!important;
+  text-align:center!important;
+  white-space:pre-line!important;
+  min-height:18px!important;
 }
 
 .participant-label{
@@ -696,12 +658,10 @@ html.ss-registered #gameScreen{display:block}
 }
 
 @media(max-width:640px){
-  #registerScreen,
-  #registerScreen.register-screen{
+  #registrationScreen.registration-screen{
     padding:16px!important;
   }
-  #registerScreen .register-card{
+  #registrationScreen .registration-card{
     padding:22px 18px!important;
-    border-radius:22px!important;
   }
 }

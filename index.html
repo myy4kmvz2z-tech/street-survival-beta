@@ -16,34 +16,6 @@
 </head>
 <body>
 
-<div id="registrationScreen" class="registration-screen">
-  <div class="registration-card">
-    <div class="registration-logo">STREET SURVIVAL</div>
-    <div class="registration-subtitle">リアル鬼ごっこ型 街サバイバルゲーム</div>
-
-    <label class="registration-label" for="nicknameInput">ニックネーム</label>
-    <input id="nicknameInput" class="registration-input" type="text" maxlength="20" placeholder="名前を入力" autocomplete="nickname">
-
-    <label class="registration-check">
-      <input id="agreeCheck" type="checkbox">
-      <span>注意事項に同意する</span>
-    </label>
-
-    <div class="registration-rules">
-      <div>⚠ 注意事項</div>
-      <ul>
-        <li>走りすぎない</li>
-        <li>車・自転車に注意</li>
-        <li>店舗や通行人の迷惑にならない</li>
-        <li>体調が悪い時は参加しない</li>
-      </ul>
-    </div>
-
-    <button id="joinButton" class="registration-button" type="button">参加する</button>
-    <div id="registrationMessage" class="registration-message"></div>
-  </div>
-</div>
-
 <div id="gameScreen">
 <header class="top-header">
   <div>
@@ -222,11 +194,39 @@
 </main>
 </div>
 
+<div id="registrationScreen" class="registration-screen">
+  <div class="registration-card">
+    <div class="registration-logo">STREET SURVIVAL</div>
+    <div class="registration-subtitle">リアル鬼ごっこ型 街サバイバルゲーム</div>
+
+    <label class="registration-label" for="nicknameInput">ニックネーム</label>
+    <input id="nicknameInput" class="registration-input" type="text" maxlength="20" placeholder="名前を入力" autocomplete="nickname">
+
+    <label class="registration-check">
+      <input id="agreeCheck" type="checkbox">
+      <span>注意事項に同意する</span>
+    </label>
+
+    <div class="registration-rules">
+      <div class="registration-rules-title">⚠ 注意事項</div>
+      <ul>
+        <li>走りすぎない</li>
+        <li>車・自転車に注意</li>
+        <li>店舗や通行人の迷惑にならない</li>
+        <li>体調が悪い時は参加しない</li>
+      </ul>
+    </div>
+
+    <button id="joinButton" class="registration-button" type="button">参加する</button>
+    <div id="registrationMessage" class="registration-message"></div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="firebase-config-live.js?v=25"></script>
 <script src="app.js?v=36"></script>
-<script src="player-register.js?v=2"></script>
+<script src="player-register.js?v=3"></script>
 <script src="role-sync.js?v=5"></script>
 <script src="settings-sync.js?v=1"></script>
 

@@ -498,170 +498,154 @@ body.low-power *{
   scroll-behavior:auto !important;
 }
 
-/* 参加者登録画面（#registrationScreen 専用） */
-html,
-body{
-  margin:0;
-  padding:0;
-  min-height:100%;
-}
-
-#gameScreen{display:none}
-html.ss-registered #registrationScreen{display:none!important}
-html.ss-registered #gameScreen{display:block}
-
-html:not(.ss-registered) body{
-  background:#06120e;
-  background:radial-gradient(circle at top,#0f3d2e 0%,#06120e 55%,#020504 100%);
-  color:#fff;
-  overflow-x:hidden;
-}
-
-#registrationScreen.registration-screen{
-  position:fixed!important;
-  inset:0!important;
-  z-index:100001!important;
-  min-height:100vh!important;
-  min-height:100dvh!important;
-  width:100%!important;
-  background:radial-gradient(circle at top,#0f3d2e 0%,#06120e 55%,#020504 100%)!important;
-  color:#fff!important;
-  display:flex!important;
-  justify-content:center!important;
-  align-items:center!important;
-  padding:20px!important;
-  box-sizing:border-box!important;
-  overflow-y:auto!important;
-  -webkit-overflow-scrolling:touch;
-}
-
-#registrationScreen .registration-card{
-  width:100%!important;
-  max-width:420px!important;
-  background:rgba(5,15,12,.94)!important;
-  border:1px solid rgba(255,255,255,.16)!important;
-  border-radius:26px!important;
-  padding:26px!important;
-  box-shadow:0 24px 70px rgba(0,0,0,.55)!important;
-  box-sizing:border-box!important;
-  color:#fff!important;
-  flex-shrink:0!important;
-  position:relative!important;
-  margin:0!important;
-}
-
-#registrationScreen .registration-logo{
-  font-size:30px!important;
-  font-weight:900!important;
-  letter-spacing:1px!important;
-  margin-bottom:8px!important;
-  color:#fff!important;
-}
-
-#registrationScreen .registration-subtitle{
-  font-size:14px!important;
-  color:rgba(255,255,255,.75)!important;
-  margin-bottom:24px!important;
-}
-
-#registrationScreen .registration-label{
-  display:block!important;
-  font-size:14px!important;
-  font-weight:700!important;
-  margin-bottom:8px!important;
-  color:#fff!important;
-}
-
-#registrationScreen .registration-input,
-#registrationScreen input.registration-input{
-  width:100%!important;
-  max-width:none!important;
-  height:48px!important;
-  border-radius:14px!important;
-  border:1px solid rgba(255,255,255,.2)!important;
-  background:rgba(0,0,0,.45)!important;
-  color:#fff!important;
-  padding:0 14px!important;
-  font-size:16px!important;
-  box-sizing:border-box!important;
-  margin-bottom:16px!important;
-}
-
-#registrationScreen .registration-input::placeholder{
-  color:rgba(255,255,255,.45)!important;
-}
-
-#registrationScreen .registration-check{
-  display:flex!important;
-  gap:10px!important;
-  align-items:center!important;
-  font-size:14px!important;
-  margin-bottom:18px!important;
-  color:#fff!important;
-  cursor:pointer!important;
-}
-
-#registrationScreen .registration-check input{
-  width:20px!important;
-  height:20px!important;
-  max-width:none!important;
-  margin:0!important;
-  accent-color:#f6c945!important;
-}
-
-#registrationScreen .registration-rules{
-  background:rgba(255,255,255,.08)!important;
-  border-radius:16px!important;
-  padding:14px 16px!important;
-  font-size:13px!important;
-  line-height:1.7!important;
-  margin-bottom:20px!important;
-  color:rgba(255,255,255,.82)!important;
-}
-
-#registrationScreen .registration-rules ul{
-  margin:8px 0 0!important;
-  padding-left:20px!important;
-}
-
-#registrationScreen .registration-button,
-#registrationScreen button.registration-button{
-  width:100%!important;
-  max-width:none!important;
-  height:52px!important;
-  border:none!important;
-  border-radius:16px!important;
-  background:#f6c945!important;
-  color:#111!important;
-  font-size:18px!important;
-  font-weight:900!important;
-  cursor:pointer!important;
-  padding:0!important;
-}
-
-#registrationScreen .registration-button:disabled{
-  opacity:.72!important;
-}
-
-#registrationScreen .registration-message{
-  margin-top:12px!important;
-  color:#ffdf6e!important;
-  font-size:13px!important;
-  text-align:center!important;
-  white-space:pre-line!important;
-  min-height:18px!important;
-}
 
 .participant-label{
   color:var(--accent)!important;
   font-weight:800;
 }
 
-@media(max-width:640px){
-  #registrationScreen.registration-screen{
-    padding:16px!important;
-  }
-  #registrationScreen .registration-card{
-    padding:22px 18px!important;
-  }
+/* ===== 参加者登録画面 FIX（最優先・ファイル末尾） ===== */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+html:not(.ss-registered) #gameScreen {
+  display: none !important;
+}
+
+html.ss-registered #registrationScreen {
+  display: none !important;
+}
+
+html.ss-registered #gameScreen {
+  display: block !important;
+}
+
+#registrationScreen.registration-screen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  min-height: 100vh !important;
+  background: radial-gradient(circle at top, #0f3d2e 0%, #06120e 55%, #020504 100%) !important;
+  color: #fff !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
+  z-index: 9999 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+#registrationScreen .registration-card {
+  width: 100% !important;
+  max-width: 420px !important;
+  background: rgba(5, 15, 12, 0.96) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  border-radius: 26px !important;
+  padding: 26px !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.55) !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  float: none !important;
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  flex-shrink: 0 !important;
+}
+
+#registrationScreen .registration-logo {
+  font-size: 30px !important;
+  font-weight: 900 !important;
+  letter-spacing: 1px !important;
+  margin-bottom: 8px !important;
+  color: #fff !important;
+}
+
+#registrationScreen .registration-subtitle {
+  font-size: 14px !important;
+  color: rgba(255,255,255,0.75) !important;
+  margin-bottom: 24px !important;
+}
+
+#registrationScreen .registration-label {
+  display: block !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  margin-bottom: 8px !important;
+  color: #fff !important;
+}
+
+#registrationScreen .registration-input,
+#registrationScreen input.registration-input {
+  width: 100% !important;
+  max-width: none !important;
+  height: 48px !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  background: rgba(0,0,0,0.45) !important;
+  color: #fff !important;
+  padding: 0 14px !important;
+  font-size: 16px !important;
+  box-sizing: border-box !important;
+  margin-bottom: 16px !important;
+}
+
+#registrationScreen .registration-check {
+  display: flex !important;
+  gap: 10px !important;
+  align-items: center !important;
+  font-size: 14px !important;
+  margin-bottom: 18px !important;
+  color: #fff !important;
+}
+
+#registrationScreen .registration-check input {
+  width: 20px !important;
+  height: 20px !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+#registrationScreen .registration-rules {
+  background: rgba(255,255,255,0.08) !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  margin-bottom: 20px !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+#registrationScreen .registration-rules ul {
+  margin: 8px 0 0 !important;
+  padding-left: 20px !important;
+}
+
+#registrationScreen .registration-button,
+#registrationScreen button.registration-button {
+  width: 100% !important;
+  max-width: none !important;
+  height: 52px !important;
+  border: none !important;
+  border-radius: 16px !important;
+  background: #f6c945 !important;
+  color: #111 !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+}
+
+#registrationScreen .registration-message {
+  margin-top: 12px !important;
+  color: #ffdf6e !important;
+  font-size: 13px !important;
+  text-align: center !important;
+  white-space: pre-line !important;
 }

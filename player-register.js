@@ -81,20 +81,12 @@
   }
 
   function showGame(){
-    const registrationScreen = document.getElementById("registrationScreen");
-    const gameScreen = document.getElementById("gameScreen");
-    if(registrationScreen) registrationScreen.classList.add("hidden");
-    if(gameScreen) gameScreen.classList.remove("hidden");
     document.documentElement.classList.add("ss-registered");
     window.SS_PLAYER_REGISTERED = true;
     applyNicknameToGame();
   }
 
   function showRegister(){
-    const registrationScreen = document.getElementById("registrationScreen");
-    const gameScreen = document.getElementById("gameScreen");
-    if(registrationScreen) registrationScreen.classList.remove("hidden");
-    if(gameScreen) gameScreen.classList.add("hidden");
     document.documentElement.classList.remove("ss-registered");
     window.SS_PLAYER_REGISTERED = false;
   }

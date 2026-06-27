@@ -1,9 +1,14 @@
-/* ROLE SYNC v3 - auto register + hunter timer + real player count */
+/* ROLE SYNC v5 - 本番前安定版 / street-survival-admin v54 連動 */
 
 (function(){
+  const VERSION = 5;
+  window.SS_ROLE_SYNC_OFFICIAL = true;
+
   let started = false;
   let playerRef = null;
   let playersRef = null;
+  let returnLock = false;
+  let lastHunterEndsAt = null;
 
   function logMsg(msg){
     if(typeof addLog === "function"){
@@ -15,10 +20,17 @@
 
   function getDb(){
     try{
+      if(typeof SS_FINAL_DB !== "undefined" && SS_FINAL_DB){
+        return SS_FINAL_DB;
+      }
+    }catch(e){}
+
+    try{
       if(window.firebase && firebase.apps && firebase.apps.length){
         return firebase.database();
       }
     }catch(e){}
+
     return null;
   }
 
@@ -38,6 +50,15 @@
     if(el) el.textContent = text;
   }
 
+  function maxHp(){
+    try{
+      if(typeof CONFIG !== "undefined" && CONFIG.maxHp){
+        return CONFIG.maxHp;
+      }
+    }catch(e){}
+    return 300;
+  }
+
   function countOnlinePlayers(players){
     const now = Date.now();
     return players.filter(p => {
@@ -45,6 +66,27 @@
       const status = String(p.status || "").toUpperCase();
       return status !== "OFFLINE" && now - lastSeen < 1000 * 60 * 5;
     });
+  }
+
+  function renderFirebasePlayerList(playersObj){
+    const el = document.getElementById("players");
+    if(!el) return;
+
+    const active = countOnlinePlayers(Object.values(playersObj || {}));
+    if(!active.length) return;
+
+    const hpMax = maxHp();
+    const rows = active
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ja"))
+      .map(p => {
+        const role = String(p.role || "RUNNER").toUpperCase();
+        const icon = role === "HUNTER" ? "🟢" : "🔵";
+        const name = p.name || p.id || "?";
+        const hp = Math.round(Number(p.hp) || 0);
+        return `<div class="item"><strong>${icon} ${name}</strong><small>HP ${hp} / ${hpMax}</small><br><small>${role}</small></div>`;
+      });
+
+    el.innerHTML = rows.join("");
   }
 
   function updatePlayerCounts(playersObj){
@@ -55,7 +97,10 @@
     const hunters = active.filter(p => String(p.role || "").toUpperCase() === "HUNTER").length;
     const bosses = active.filter(p => String(p.role || "").toUpperCase() === "BOSS").length;
     const missions = active.filter(p => String(p.role || "").toUpperCase() === "MISSION").length;
-    const safe = active.filter(p => String(p.area || "").toUpperCase() === "SAFE" || String(p.status || "").toUpperCase() === "SAFE").length;
+    const safe = active.filter(p =>
+      String(p.area || "").toUpperCase() === "SAFE" ||
+      String(p.status || "").toUpperCase() === "SAFE"
+    ).length;
     const runners = Math.max(0, total - hunters - bosses - missions);
 
     if(typeof state !== "undefined"){
@@ -73,6 +118,8 @@
     setText("bossCount", bosses);
     setText("missionCount", missions);
     setText("safeCount", safe);
+
+    renderFirebasePlayerList(playersObj);
 
     if(typeof render === "function"){
       render();
@@ -112,6 +159,40 @@
     return m + ":" + String(s).padStart(2, "0");
   }
 
+  function syncStats(player){
+    const hpMaxVal = maxHp();
+
+    if(typeof player.hp === "number"){
+      if(typeof state !== "undefined" && state.me){
+        state.me.hp = player.hp;
+      }
+      setText("hpText", Math.round(player.hp) + "/" + hpMaxVal);
+      const bar = document.getElementById("hpBar");
+      if(bar){
+        bar.style.width = Math.max(0, Math.min(100, (player.hp / hpMaxVal) * 100)) + "%";
+      }
+    }
+
+    if(typeof player.points === "number"){
+      if(typeof state !== "undefined" && state.me){
+        state.me.points = player.points;
+      }
+      setText("points", Math.round(player.points));
+    }
+  }
+
+  function setRolePanel(isHunter){
+    const panel = document.getElementById("statusPanel");
+    if(panel){
+      panel.className = "status-panel " + (isHunter ? "hunter-mode" : "runner-mode");
+    }
+
+    const roleBtn = document.getElementById("roleBtn");
+    if(roleBtn){
+      roleBtn.textContent = isHunter ? "🔵 ACTION" : "🟢 ACTION";
+    }
+  }
+
   async function ensurePlayerData(ref, playerId){
     const snap = await ref.get();
     const nameInput = document.getElementById("playerName");
@@ -145,7 +226,30 @@
       });
     }catch(e){}
 
-    logMsg("✅ 自分のFirebaseデータ作成: " + playerId);
+    logMsg("✅ 自分のFirebaseデータ作成");
+  }
+
+  async function returnToRunner(ref){
+    if(!ref || returnLock) return;
+
+    returnLock = true;
+
+    try{
+      await ref.update({
+        role: "RUNNER",
+        hunterEndsAt: null,
+        lastAdminAction: "HUNTER_TIME_UP",
+        lastSeen: Date.now()
+      });
+
+      logMsg("⏰ HUNTER時間終了 → RUNNERへ戻りました");
+    }catch(e){
+      console.error(e);
+    }
+
+    setTimeout(() => {
+      returnLock = false;
+    }, 3000);
   }
 
   function applyRole(player, ref){
@@ -157,10 +261,9 @@
     if(typeof state !== "undefined" && state.me){
       state.me.role = isHunter ? "hunter" : "runner";
       state.me.hunterEndsAt = player.hunterEndsAt || null;
-
-      if(typeof player.hp === "number") state.me.hp = player.hp;
-      if(typeof player.points === "number") state.me.points = player.points;
     }
+
+    syncStats(player);
 
     const badge = document.getElementById("roleBadge");
     if(badge){
@@ -171,12 +274,15 @@
     setText("statusTitle", role);
     setText("statusIcon", isHunter ? "🟢" : "🔵");
     setText("statusSub", isHunter ? "🎯 追跡中" : "🏃 生存中");
+    setText("statusNote", isHunter ? "👀 追跡中" : "👀 気配なし");
+    setRolePanel(isHunter);
 
     const hud = ensureHud();
 
     if(!isHunter){
       hud.style.display = "none";
       setText("hunterTimer", "-");
+      lastHunterEndsAt = null;
       if(typeof render === "function") render();
       return;
     }
@@ -191,20 +297,17 @@
       return;
     }
 
+    if(endsAt !== lastHunterEndsAt){
+      lastHunterEndsAt = endsAt;
+    }
+
     const remain = endsAt - Date.now();
 
     if(remain <= 0){
       hud.style.display = "block";
       hud.textContent = "🔵 RUNNERへ戻ります...";
       setText("hunterTimer", "0:00");
-
-      ref.update({
-        role: "RUNNER",
-        hunterEndsAt: null,
-        lastAdminAction: "HUNTER_TIME_UP",
-        lastSeen: Date.now()
-      });
-
+      returnToRunner(ref);
       if(typeof render === "function") render();
       return;
     }
@@ -255,10 +358,17 @@
     setInterval(() => {
       if(!playerRef) return;
 
-      playerRef.update({
+      const nameInput = document.getElementById("playerName");
+      const name = nameInput && nameInput.value ? nameInput.value : null;
+
+      const patch = {
         status: "ONLINE",
         lastSeen: Date.now()
-      });
+      };
+
+      if(name) patch.name = name;
+
+      playerRef.update(patch);
 
       playerRef.get().then(snap => {
         const player = snap.val();
@@ -268,10 +378,10 @@
       });
     }, 1000);
 
-    logMsg("✅ ROLE同期開始 role-sync.js v3: " + playerId);
+    logMsg("✅ ROLE同期開始 role-sync.js v" + VERSION);
   }
 
   window.addEventListener("load", () => {
-    setTimeout(start, 3000);
+    setTimeout(start, 1500);
   });
 })();

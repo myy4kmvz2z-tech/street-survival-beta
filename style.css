@@ -1059,6 +1059,34 @@ html.ss-registered body {
   letter-spacing: 0.02em;
 }
 
+.safe-zone-status,
+.healer-zone-status {
+  border-radius: 18px;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.5;
+  white-space: pre-line;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.32);
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.safe-zone-status {
+  border-color: rgba(89, 214, 141, 0.25);
+}
+
+.healer-zone-status {
+  border-color: rgba(255, 120, 150, 0.35);
+  background: linear-gradient(180deg, rgba(255, 120, 150, 0.12), rgba(0, 0, 0, 0.32));
+  color: #fff;
+  min-height: 0;
+}
+
+.healer-zone-status:empty {
+  display: none;
+}
+
 .safe-area-banner {
   background: linear-gradient(180deg, rgba(89, 214, 141, 0.28), rgba(5, 20, 12, 0.95));
   border: 2px solid rgba(89, 214, 141, 0.55);

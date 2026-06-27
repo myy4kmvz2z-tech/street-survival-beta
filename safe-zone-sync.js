@@ -1,16 +1,29 @@
-/* SAFE ZONE SYNC v1.0 - streetSurvival/safeZones + ヒーラー回復 */
+/* SAFE ZONE SYNC v2.0 - streetSurvival/safeZones + ヒーラー回復 */
 
 (function(){
-  const VERSION = 1;
+  const VERSION = 2;
+  const SAVE_INTERVAL_MS = 5000;
+  const GEO_OPTIONS = {
+    enableHighAccuracy: true,
+    maximumAge: 5000,
+    timeout: 10000
+  };
 
-  window.STREET_SURVIVAL_SAFE_ZONES = window.STREET_SURVIVAL_SAFE_ZONES || {};
+  window.STREET_SURVIVAL_SAFE_ZONES = window.STREET_SURVIVAL_SAFE_ZONES || [];
+  window.STREET_SURVIVAL_CURRENT_LOCATION = window.STREET_SURVIVAL_CURRENT_LOCATION || null;
 
-  let watchStarted = false;
+  let started = false;
+  let zonesWatchStarted = false;
+  let geoWatchId = null;
   let healerTimer = null;
   let currentHealerZoneId = null;
   let currentHealerConfig = null;
   let lastSafeZoneId = null;
+  let lastSavedSafeZoneId = undefined;
+  let lastSaveAt = 0;
+  let currentMatch = null;
   let playerRef = null;
+  let playerHp = null;
 
   function logMsg(msg){
     if(typeof addLog === "function"){
@@ -20,9 +33,21 @@
     }
   }
 
+  function debug(msg, data){
+    console.log("[safe-zone-sync]", msg, data !== undefined ? data : "");
+  }
+
   function setText(id, text){
     const el = document.getElementById(id);
     if(el) el.textContent = text;
+  }
+
+  function isRegistered(){
+    return localStorage.getItem("street_survival_registered") === "true";
+  }
+
+  function getPlayerId(){
+    return localStorage.getItem("street_survival_player_id");
   }
 
   function getDb(){
@@ -33,20 +58,22 @@
     }catch(e){}
 
     try{
-      if(window.firebase && firebase.apps && firebase.apps.length){
-        return firebase.database();
+      if(window.firebase && typeof firebase.database === "function"){
+        if(firebase.apps && firebase.apps.length){
+          return firebase.database();
+        }
       }
     }catch(e){}
 
     return null;
   }
 
-  function getPlayerId(){
-    return localStorage.getItem("street_survival_player_id");
-  }
-
-  function isRegistered(){
-    return localStorage.getItem("street_survival_registered") === "true";
+  function canStart(){
+    if(!isRegistered()) return false;
+    if(!getPlayerId()) return false;
+    if(!getDb()) return false;
+    if(!window.firebase || typeof firebase.database !== "function") return false;
+    return true;
   }
 
   function getMaxHp(){
@@ -63,6 +90,122 @@
     return 300;
   }
 
+  function isActiveZone(zone){
+    if(!zone) return false;
+    return zone.active === true || zone.active === "true" || zone.active === 1;
+  }
+
+  function normalizeSafeZones(raw){
+    if(!raw) return [];
+
+    const list = [];
+
+    if(Array.isArray(raw)){
+      raw.forEach((zone, index) => {
+        if(!zone || !isActiveZone(zone)) return;
+        list.push(Object.assign({}, zone, {
+          zoneId: zone.zoneId || zone.id || ("zone_" + index)
+        }));
+      });
+      return list;
+    }
+
+    Object.keys(raw).forEach(zoneId => {
+      const zone = raw[zoneId];
+      if(!zone || !isActiveZone(zone)) return;
+      list.push(Object.assign({}, zone, { zoneId: zone.zoneId || zone.id || zoneId }));
+    });
+
+    return list;
+  }
+
+  function getDistanceMeters(lat1, lng1, lat2, lng2){
+    const R = 6371000;
+    const toRad = deg => deg * Math.PI / 180;
+    const dLat = toRad(Number(lat2) - Number(lat1));
+    const dLng = toRad(Number(lng2) - Number(lng1));
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(Number(lat1))) * Math.cos(toRad(Number(lat2))) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  window.getDistanceMeters = getDistanceMeters;
+
+  function getCurrentLocation(){
+    if(window.STREET_SURVIVAL_CURRENT_LOCATION &&
+      Number.isFinite(window.STREET_SURVIVAL_CURRENT_LOCATION.lat) &&
+      Number.isFinite(window.STREET_SURVIVAL_CURRENT_LOCATION.lng)){
+      return window.STREET_SURVIVAL_CURRENT_LOCATION;
+    }
+
+    if(window.CURRENT_LOCATION &&
+      Number.isFinite(window.CURRENT_LOCATION.lat) &&
+      Number.isFinite(window.CURRENT_LOCATION.lng)){
+      return window.CURRENT_LOCATION;
+    }
+
+    return null;
+  }
+
+  function publishLocation(lat, lng, accuracy){
+    const loc = {
+      lat: lat,
+      lng: lng,
+      accuracy: accuracy,
+      updatedAt: Date.now()
+    };
+    window.STREET_SURVIVAL_CURRENT_LOCATION = loc;
+    window.CURRENT_LOCATION = loc;
+    return loc;
+  }
+
+  function findClosestSafeZone(lat, lng){
+    const zones = window.STREET_SURVIVAL_SAFE_ZONES || [];
+    const latitude = Number(lat);
+    const longitude = Number(lng);
+
+    if(!Number.isFinite(latitude) || !Number.isFinite(longitude) || !zones.length){
+      return null;
+    }
+
+    let closest = null;
+
+    zones.forEach(zone => {
+      const zoneLat = Number(zone.lat);
+      const zoneLng = Number(zone.lng);
+      const radiusM = Number(zone.radiusM != null ? zone.radiusM : zone.radius);
+
+      if(!Number.isFinite(zoneLat) || !Number.isFinite(zoneLng) || !Number.isFinite(radiusM) || radiusM <= 0){
+        return;
+      }
+
+      const distanceM = getDistanceMeters(latitude, longitude, zoneLat, zoneLng);
+      if(distanceM > radiusM) return;
+
+      const match = {
+        zoneId: zone.zoneId,
+        name: zone.name || zone.zoneId,
+        label: zone.label || ("🛡 " + (zone.name || zone.zoneId)),
+        distanceM: Math.round(distanceM),
+        radiusM: radiusM,
+        isHealer: zone.isHealer === true || zone.isHealer === "true" || zone.isHealer === 1,
+        healAmount: Number(zone.healAmount) > 0 ? Number(zone.healAmount) : 2,
+        healIntervalSec: Number(zone.healIntervalSec) > 0 ? Number(zone.healIntervalSec) : 5
+      };
+
+      if(!closest || match.distanceM < closest.distanceM){
+        closest = match;
+      }
+    });
+
+    return closest;
+  }
+
+  window.findSafeZone = function(lat, lng){
+    return findClosestSafeZone(lat, lng);
+  };
+
   function ensurePlayerRef(){
     if(playerRef) return playerRef;
 
@@ -74,56 +217,136 @@
     return playerRef;
   }
 
-  window.findSafeZone = function(lat, lng){
-    const zones = window.STREET_SURVIVAL_SAFE_ZONES || {};
-    const latitude = Number(lat);
-    const longitude = Number(lng);
-    const getDistance = window.getDistanceMeters;
+  function watchPlayerHp(){
+    const ref = ensurePlayerRef();
+    if(!ref || ref.__ssSafeZoneHpWatch) return;
 
-    if(!Number.isFinite(latitude) || !Number.isFinite(longitude) || typeof getDistance !== "function"){
-      return null;
-    }
-
-    let closest = null;
-
-    Object.keys(zones).forEach(zoneId => {
-      const zone = zones[zoneId];
-      if(!zone || zone.active !== true) return;
-
-      const zoneLat = Number(zone.lat);
-      const zoneLng = Number(zone.lng);
-      const radiusM = Number(zone.radiusM);
-
-      if(!Number.isFinite(zoneLat) || !Number.isFinite(zoneLng) || !Number.isFinite(radiusM) || radiusM <= 0){
-        return;
-      }
-
-      const distanceM = getDistance(latitude, longitude, zoneLat, zoneLng);
-      if(distanceM > radiusM) return;
-
-      const match = {
-        zoneId: zoneId,
-        name: zone.name || zoneId,
-        label: zone.label || ("🛡 " + (zone.name || zoneId)),
-        distanceM: Math.round(distanceM),
-        radiusM: radiusM,
-        isHealer: zone.isHealer === true,
-        healAmount: Number(zone.healAmount) > 0 ? Number(zone.healAmount) : 2,
-        healIntervalSec: Number(zone.healIntervalSec) > 0 ? Number(zone.healIntervalSec) : 5
-      };
-
-      if(!closest || match.distanceM < closest.distanceM){
-        closest = match;
+    ref.__ssSafeZoneHpWatch = true;
+    ref.on("value", snap => {
+      const player = snap.val();
+      if(player && typeof player.hp === "number"){
+        playerHp = player.hp;
       }
     });
+  }
 
-    return closest;
-  };
+  function updateSafeZoneUI(match){
+    const status = document.getElementById("safeZoneStatus");
+    const healerStatus = document.getElementById("healerZoneStatus");
+    const banner = document.getElementById("safeAreaBanner");
+    const bannerTitle = document.getElementById("safeAreaBannerTitle");
+    const bannerSub = document.getElementById("safeAreaBannerSub");
+    const gameScreen = document.getElementById("gameScreen");
 
-  function stopHealerTimer(){
+    if(!match){
+      if(status) status.textContent = "🛡 SAFEゾーン外";
+      if(healerStatus) healerStatus.textContent = "";
+      if(banner) banner.classList.add("hidden");
+      if(gameScreen){
+        gameScreen.classList.remove("in-safe-area");
+        gameScreen.classList.remove("in-healer-zone");
+      }
+      return;
+    }
+
+    if(status){
+      status.textContent = "🛡 SAFEゾーン：" + match.name + "\n距離：" + match.distanceM + "m / 半径：" + match.radiusM + "m";
+    }
+
+    if(gameScreen){
+      gameScreen.classList.add("in-safe-area");
+      gameScreen.classList.toggle("in-healer-zone", !!match.isHealer);
+    }
+
+    if(banner){
+      banner.classList.remove("hidden");
+      banner.classList.toggle("healer-zone", !!match.isHealer);
+    }
+
+    if(match.isHealer){
+      if(healerStatus){
+        healerStatus.textContent = "❤️ HEALER ZONE\nHP +" + match.healAmount + " / " + match.healIntervalSec + "秒";
+      }
+      if(bannerTitle) bannerTitle.textContent = "❤️ HEALER ZONE";
+      if(bannerSub) bannerSub.textContent = match.name + "\nHP +" + match.healAmount + " / " + match.healIntervalSec + "秒";
+      setText("areaStatus", match.label || match.name);
+    }else{
+      if(healerStatus) healerStatus.textContent = "";
+      if(bannerTitle) bannerTitle.textContent = "🛡 SAFEゾーン";
+      if(bannerSub) bannerSub.textContent = match.name;
+      setText("areaStatus", match.label || match.name);
+    }
+  }
+
+  function logSafeZoneTransition(match){
+    const newId = match ? match.zoneId : null;
+    if(newId === lastSafeZoneId) return;
+
+    if(lastSafeZoneId && !newId){
+      logMsg("🛡 SAFEゾーンを出ました");
+      debug("SAFE判定", "outside");
+    }else if(newId){
+      logMsg("🛡 SAFEゾーンに入りました：" + match.name);
+      debug("SAFE判定", "inside " + match.name);
+    }
+
+    lastSafeZoneId = newId;
+  }
+
+  async function saveSafeZoneState(match){
+    const ref = ensurePlayerRef();
+    if(!ref) return;
+
+    const now = Date.now();
+    const zoneId = match ? match.zoneId : null;
+    const zoneChanged = zoneId !== lastSavedSafeZoneId;
+
+    if(!zoneChanged && now - lastSaveAt < SAVE_INTERVAL_MS){
+      return;
+    }
+
+    lastSaveAt = now;
+    lastSavedSafeZoneId = zoneId;
+
+    try{
+      if(match){
+        await ref.update({
+          isSafe: true,
+          safeZoneId: match.zoneId,
+          safeZoneName: match.name,
+          safeZoneLabel: match.label,
+          safeZoneDistanceM: match.distanceM,
+          isHealer: !!match.isHealer,
+          healerZoneName: match.isHealer ? match.name : null,
+          area: match.name,
+          areaKey: "safeZone",
+          areaLabel: match.label,
+          areaUpdatedAt: now,
+          updatedAt: now
+        });
+      }else{
+        await ref.update({
+          isSafe: false,
+          safeZoneId: null,
+          safeZoneName: null,
+          safeZoneLabel: null,
+          safeZoneDistanceM: null,
+          isHealer: false,
+          healerZoneName: null,
+          updatedAt: now
+        });
+      }
+    }catch(e){
+      console.warn("[safe-zone-sync] Firebase保存失敗", e);
+      logMsg("SAFEゾーン: Firebase保存失敗");
+    }
+  }
+
+  function stopHealerTimer(reason){
     if(healerTimer){
       clearInterval(healerTimer);
       healerTimer = null;
+      debug("ヒーラー停止", reason || "stop");
     }
     currentHealerZoneId = null;
     currentHealerConfig = null;
@@ -138,7 +361,7 @@
       const player = snap.val() || {};
       const maxHp = getMaxHp();
       const currentHp = Number(player.hp);
-      const hp = Number.isFinite(currentHp) ? currentHp : 100;
+      const hp = Number.isFinite(currentHp) ? currentHp : (playerHp != null ? playerHp : 100);
 
       if(hp >= maxHp) return;
 
@@ -151,6 +374,8 @@
         updatedAt: now
       });
 
+      playerHp = newHp;
+
       if(typeof state !== "undefined" && state.me){
         state.me.hp = newHp;
       }
@@ -162,14 +387,21 @@
       }
 
       logMsg("❤️ HP回復 +" + healAmount);
-      logMsg("❤️ HEALER ZONE: " + zone.name);
+
+      const healerStatus = document.getElementById("healerZoneStatus");
+      if(healerStatus){
+        healerStatus.textContent = "❤️ HEALER ZONE：" + zone.name + " / +" + healAmount + " / " + zone.healIntervalSec + "秒";
+      }
     }catch(e){
-      console.warn("ヒーラー回復失敗", e);
+      console.warn("[safe-zone-sync] ヒーラー回復失敗", e);
     }
   }
 
-  function startHealerTimer(zone){
-    if(!zone || !zone.isHealer) return;
+  function syncHealerTimer(zone){
+    if(!zone || !zone.isHealer){
+      stopHealerTimer("left healer zone");
+      return;
+    }
 
     const sameZone = currentHealerZoneId === zone.zoneId &&
       currentHealerConfig &&
@@ -178,7 +410,7 @@
 
     if(healerTimer && sameZone) return;
 
-    stopHealerTimer();
+    stopHealerTimer("switch zone");
     currentHealerZoneId = zone.zoneId;
     currentHealerConfig = {
       healAmount: zone.healAmount,
@@ -189,102 +421,68 @@
     healerTimer = setInterval(() => {
       performHeal(zone);
     }, intervalMs);
+
+    debug("ヒーラー開始", {
+      zoneId: zone.zoneId,
+      name: zone.name,
+      healAmount: zone.healAmount,
+      healIntervalSec: zone.healIntervalSec
+    });
   }
 
-  function logSafeZoneTransition(areaResult){
-    const safeZone = areaResult && areaResult.safeZone ? areaResult.safeZone : null;
-    const newId = safeZone ? safeZone.zoneId : null;
+  window.checkSafeZones = function(){
+    const loc = getCurrentLocation();
+    const zones = window.STREET_SURVIVAL_SAFE_ZONES || [];
 
-    if(newId === lastSafeZoneId) return;
-
-    if(lastSafeZoneId && !newId){
-      logMsg("🛡 SAFEゾーンを出ました");
-    }else if(newId){
-      logMsg("🛡 SAFEゾーンに入りました：" + safeZone.name);
+    if(!loc){
+      debug("checkSafeZones", "現在地なし");
+      return null;
     }
 
-    lastSafeZoneId = newId;
-  }
-
-  window.updateSafeZoneDisplay = function(areaResult){
-    const banner = document.getElementById("safeAreaBanner");
-    const title = document.getElementById("safeAreaBannerTitle");
-    const sub = document.getElementById("safeAreaBannerSub");
-    const gameScreen = document.getElementById("gameScreen");
-    const safeZone = areaResult && areaResult.safeZone ? areaResult.safeZone : null;
-
-    if(safeZone){
-      if(banner) banner.classList.remove("hidden");
-      if(gameScreen){
-        gameScreen.classList.add("in-safe-area");
-        gameScreen.classList.toggle("in-healer-zone", !!safeZone.isHealer);
-      }
-
-      if(safeZone.isHealer){
-        if(title) title.textContent = "❤️ HEALER ZONE";
-        if(sub) sub.textContent = safeZone.name + "\nHP +" + safeZone.healAmount + " / " + safeZone.healIntervalSec + "秒";
-        if(banner) banner.classList.add("healer-zone");
-      }else{
-        if(title) title.textContent = "🛡 SAFEゾーン";
-        if(sub) sub.textContent = safeZone.name;
-        if(banner) banner.classList.remove("healer-zone");
-      }
-
-      setText("areaStatus", safeZone.label || safeZone.name);
-      return;
+    if(!zones.length){
+      debug("checkSafeZones", "SAFEゾーンなし");
+      currentMatch = null;
+      updateSafeZoneUI(null);
+      syncHealerTimer(null);
+      return null;
     }
 
-    if(banner){
-      banner.classList.remove("healer-zone");
+    const match = findClosestSafeZone(loc.lat, loc.lng);
+    currentMatch = match;
 
-      if(areaResult && areaResult.isSafe && areaResult.key !== "safeZone"){
-        banner.classList.remove("hidden");
-        if(title) title.textContent = "🛡 SAFEエリア中";
-        if(sub) sub.textContent = "ここでは安全です";
-        if(gameScreen) gameScreen.classList.add("in-safe-area");
-      }else{
-        banner.classList.add("hidden");
-        if(gameScreen){
-          gameScreen.classList.remove("in-safe-area");
-          gameScreen.classList.remove("in-healer-zone");
-        }
-      }
-    }
-  };
-
-  window.syncSafeZoneHealer = function(areaResult){
-    const safeZone = areaResult && areaResult.safeZone ? areaResult.safeZone : null;
-
-    if(!safeZone || !safeZone.isHealer){
-      stopHealerTimer();
-      return;
+    debug("現在地", { lat: loc.lat, lng: loc.lng });
+    if(match){
+      debug("最近接SAFE", { name: match.name, distanceM: match.distanceM, radiusM: match.radiusM });
+    }else{
+      debug("SAFE判定", "範囲外");
     }
 
-    startHealerTimer(safeZone);
-  };
+    logSafeZoneTransition(match);
+    updateSafeZoneUI(match);
+    saveSafeZoneState(match);
+    syncHealerTimer(match);
 
-  window.onSafeZoneAreaChange = function(areaResult){
-    logSafeZoneTransition(areaResult);
-    window.syncSafeZoneHealer(areaResult);
+    window.STREET_SURVIVAL_CURRENT_SAFE_ZONE = match;
+    return match;
   };
 
   window.buildSafeZonePlayerFields = function(areaResult){
-    const safeZone = areaResult && areaResult.safeZone ? areaResult.safeZone : null;
+    const match = currentMatch || (areaResult && areaResult.safeZone ? areaResult.safeZone : null);
 
-    if(safeZone){
+    if(match){
       return {
         isSafe: true,
-        safeZoneId: safeZone.zoneId,
-        safeZoneName: safeZone.name,
-        safeZoneLabel: safeZone.label,
-        safeZoneDistanceM: safeZone.distanceM,
-        isHealer: !!safeZone.isHealer,
-        healerZoneName: safeZone.isHealer ? safeZone.name : null
+        safeZoneId: match.zoneId,
+        safeZoneName: match.name,
+        safeZoneLabel: match.label,
+        safeZoneDistanceM: match.distanceM,
+        isHealer: !!match.isHealer,
+        healerZoneName: match.isHealer ? match.name : null
       };
     }
 
     return {
-      isSafe: !!areaResult.isSafe,
+      isSafe: false,
       safeZoneId: null,
       safeZoneName: null,
       safeZoneLabel: null,
@@ -294,8 +492,38 @@
     };
   };
 
+  window.onSafeZoneAreaChange = function(areaResult){
+    window.checkSafeZones();
+  };
+
+  window.updateSafeZoneDisplay = function(areaResult){
+    updateSafeZoneUI(currentMatch);
+  };
+
+  function onGeoPosition(pos){
+    const coords = pos.coords || {};
+    const lat = coords.latitude;
+    const lng = coords.longitude;
+    const accuracy = coords.accuracy;
+
+    if(!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    publishLocation(lat, lng, accuracy);
+    window.checkSafeZones();
+  }
+
+  function startGeoFallback(){
+    if(geoWatchId !== null || getCurrentLocation()) return;
+    if(!navigator.geolocation) return;
+
+    debug("位置情報", "safe-zone-sync fallback watchPosition 開始");
+    geoWatchId = navigator.geolocation.watchPosition(onGeoPosition, err => {
+      console.warn("[safe-zone-sync] 位置情報エラー", err);
+    }, GEO_OPTIONS);
+  }
+
   function watchSafeZones(){
-    if(watchStarted) return;
+    if(zonesWatchStarted) return;
 
     const db = getDb();
     if(!db){
@@ -303,33 +531,69 @@
       return;
     }
 
-    watchStarted = true;
+    zonesWatchStarted = true;
 
     db.ref("streetSurvival/safeZones").on("value", snap => {
-      window.STREET_SURVIVAL_SAFE_ZONES = snap.val() || {};
-      console.log("SAFEゾーン更新:", Object.keys(window.STREET_SURVIVAL_SAFE_ZONES).length + "件");
-    });
+      const raw = snap.val();
+      window.STREET_SURVIVAL_SAFE_ZONES = normalizeSafeZones(raw);
+      const count = window.STREET_SURVIVAL_SAFE_ZONES.length;
 
-    logMsg("✅ SAFEゾーン同期開始 safe-zone-sync.js v" + VERSION);
+      if(count > 0){
+        logMsg("🛡 SAFEゾーン読込OK: " + count + "件");
+      }else{
+        logMsg("🛡 SAFEゾーンなし");
+      }
+
+      debug("SAFEゾーン読込", count + "件", window.STREET_SURVIVAL_SAFE_ZONES);
+      window.checkSafeZones();
+    });
   }
 
   function boot(){
-    if(!isRegistered()) return;
+    if(started) return;
+
+    if(!canStart()){
+      setTimeout(boot, 1000);
+      return;
+    }
+
+    started = true;
+    const playerId = getPlayerId();
+
+    logMsg("✅ safe-zone-sync.js 起動 v" + VERSION);
+    debug("起動", { playerId: playerId });
 
     ensurePlayerRef();
+    watchPlayerHp();
     watchSafeZones();
+    startGeoFallback();
+
+    if(getCurrentLocation()){
+      window.checkSafeZones();
+    }
   }
 
-  window.addEventListener("load", () => {
-    setTimeout(boot, 1600);
-  });
+  window.addEventListener("load", boot);
 
   window.addEventListener("ss-player-registered", () => {
+    started = false;
+    zonesWatchStarted = false;
     playerRef = null;
     lastSafeZoneId = null;
-    stopHealerTimer();
+    lastSavedSafeZoneId = undefined;
+    currentMatch = null;
+    stopHealerTimer("register reset");
+    if(geoWatchId !== null){
+      navigator.geolocation.clearWatch(geoWatchId);
+      geoWatchId = null;
+    }
     setTimeout(boot, 800);
-  }, { once: true });
+  });
 
-  window.addEventListener("beforeunload", stopHealerTimer);
+  window.addEventListener("beforeunload", () => {
+    stopHealerTimer("unload");
+    if(geoWatchId !== null){
+      navigator.geolocation.clearWatch(geoWatchId);
+    }
+  });
 })();

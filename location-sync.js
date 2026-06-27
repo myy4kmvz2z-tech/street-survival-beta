@@ -321,6 +321,19 @@
       return;
     }
 
+    const now = Date.now();
+    window.STREET_SURVIVAL_CURRENT_LOCATION = {
+      lat: lat,
+      lng: lng,
+      accuracy: accuracy,
+      updatedAt: now
+    };
+    window.CURRENT_LOCATION = window.STREET_SURVIVAL_CURRENT_LOCATION;
+
+    if(typeof window.checkSafeZones === "function"){
+      window.checkSafeZones();
+    }
+
     const areaResult = window.detectArea(lat, lng);
 
     if(typeof window.onSafeZoneAreaChange === "function"){

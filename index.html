@@ -8,12 +8,42 @@
   <link rel="stylesheet" href="style.css"/>
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#07090c">
+  <script>
+  if(localStorage.getItem("street_survival_registered")==="true"){
+    document.documentElement.classList.add("ss-registered");
+  }
+  </script>
 </head>
 <body>
+
+<div id="registerScreen" class="register-screen">
+  <div class="register-card">
+    <h1 class="register-title">STREET SURVIVAL</h1>
+    <label class="register-label" for="registerNickname">ニックネーム</label>
+    <input id="registerNickname" class="register-input" type="text" maxlength="20" placeholder="名前を入力" autocomplete="nickname">
+    <div id="registerError" class="register-error hidden"></div>
+    <button id="registerJoinBtn" class="register-join primary">参加する</button>
+    <div class="register-notice">
+      <strong>注意事項</strong>
+      <ul>
+        <li>走りすぎない</li>
+        <li>車・自転車に注意</li>
+        <li>店舗や通行人の迷惑にならない</li>
+        <li>体調が悪い時は参加しない</li>
+      </ul>
+    </div>
+    <label class="register-agree">
+      <input id="registerAgree" type="checkbox">
+      <span>注意事項に同意する</span>
+    </label>
+  </div>
+</div>
+
+<div id="gameScreen">
 <header class="top-header">
   <div>
     <h1>STREET SURVIVAL β10.3</h1>
-    <p>PLAYER MODE / TEST-24 / 本番運営安定版。</p>
+    <p id="participantLabel" class="participant-label">参加者：---</p>
   </div>
   <button id="resetBtn" class="ghost">RESET</button>
 </header>
@@ -168,6 +198,7 @@
     <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
     <p id="battleStatus" class="notice">現在：通常エリア</p>
     <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで位置情報を許可してください。</p>
+    <button id="registerResetBtn" class="secondary full">🔁 登録リセット（テスト用）</button>
   </details>
   <details class="sub-panel">
     <summary>🌆 街ステータス / ログ</summary>
@@ -184,11 +215,13 @@
   </details>
 
 </main>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="firebase-config-live.js?v=25"></script>
 <script src="app.js?v=36"></script>
+<script src="player-register.js?v=1"></script>
 <script src="role-sync.js?v=5"></script>
 <script src="settings-sync.js?v=1"></script>
 

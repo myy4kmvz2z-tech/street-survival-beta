@@ -62,6 +62,8 @@
   function countOnlinePlayers(players){
     const now = Date.now();
     return players.filter(p => {
+      if(p.online === true) return true;
+      if(p.online === false) return false;
       const lastSeen = Number(p.lastSeen || 0);
       const status = String(p.status || "").toUpperCase();
       return status !== "OFFLINE" && now - lastSeen < 1000 * 60 * 5;
@@ -81,7 +83,7 @@
       .map(p => {
         const role = String(p.role || "RUNNER").toUpperCase();
         const icon = role === "HUNTER" ? "🟢" : "🔵";
-        const name = p.name || p.id || "?";
+        const name = p.nickname || p.name || p.id || "?";
         const hp = Math.round(Number(p.hp) || 0);
         return `<div class="item"><strong>${icon} ${name}</strong><small>HP ${hp} / ${hpMax}</small><br><small>${role}</small></div>`;
       });
@@ -193,36 +195,81 @@
     }
   }
 
+  function getInitialHp(){
+    try{
+      if(window.STREET_SURVIVAL_SETTINGS && window.STREET_SURVIVAL_SETTINGS.initialHp){
+        return Number(window.STREET_SURVIVAL_SETTINGS.initialHp) || 100;
+      }
+    }catch(e){}
+    try{
+      if(typeof CONFIG !== "undefined" && CONFIG.initialHp){
+        return CONFIG.initialHp;
+      }
+    }catch(e){}
+    return 100;
+  }
+
+  function getNickname(){
+    const stored = localStorage.getItem("street_survival_nickname");
+    if(stored) return stored;
+    const nameInput = document.getElementById("playerName");
+    if(nameInput && nameInput.value) return nameInput.value;
+    return "RED";
+  }
+
   async function ensurePlayerData(ref, playerId){
     const snap = await ref.get();
-    const nameInput = document.getElementById("playerName");
-    const name = nameInput && nameInput.value ? nameInput.value : "RED";
+    const nickname = getNickname();
+    const now = Date.now();
 
     if(snap.exists()){
       await ref.update({
-        name: name,
+        nickname: nickname,
+        name: nickname,
+        online: true,
         status: "ONLINE",
-        lastSeen: Date.now()
+        lastSeen: now,
+        updatedAt: now
       });
+
+      try{
+        ref.onDisconnect().update({
+          online: false,
+          status: "OFFLINE",
+          lastSeen: Date.now(),
+          updatedAt: Date.now()
+        });
+      }catch(e){}
+
+      return;
+    }
+
+    if(localStorage.getItem("street_survival_registered") !== "true"){
       return;
     }
 
     await ref.set({
       id: playerId,
-      name: name,
+      nickname: nickname,
+      name: nickname,
       role: "RUNNER",
-      hp: 100,
+      hp: getInitialHp(),
       points: 0,
-      area: "UNKNOWN",
+      joinedAt: now,
+      updatedAt: now,
+      online: true,
       status: "ONLINE",
-      lastSeen: Date.now(),
-      createdAt: Date.now()
+      lastSeen: now,
+      area: "UNKNOWN",
+      createdAt: now
     });
 
     try{
       ref.onDisconnect().update({
+        online: false,
         status: "OFFLINE",
-        lastSeen: Date.now()
+        lastSeen: Date.now(),
+        updatedAt: Date.now()
       });
     }catch(e){}
 
@@ -239,7 +286,9 @@
         role: "RUNNER",
         hunterEndsAt: null,
         lastAdminAction: "HUNTER_TIME_UP",
-        lastSeen: Date.now()
+        online: true,
+        lastSeen: Date.now(),
+        updatedAt: Date.now()
       });
 
       logMsg("⏰ HUNTER時間終了 → RUNNERへ戻りました");
@@ -324,6 +373,10 @@
   async function start(){
     if(started) return;
 
+    if(localStorage.getItem("street_survival_registered") !== "true"){
+      return;
+    }
+
     const db = getDb();
 
     if(!db){
@@ -358,17 +411,17 @@
     setInterval(() => {
       if(!playerRef) return;
 
-      const nameInput = document.getElementById("playerName");
-      const name = nameInput && nameInput.value ? nameInput.value : null;
+      const nickname = getNickname();
+      const now = Date.now();
 
-      const patch = {
+      playerRef.update({
+        nickname: nickname,
+        name: nickname,
+        online: true,
         status: "ONLINE",
-        lastSeen: Date.now()
-      };
-
-      if(name) patch.name = name;
-
-      playerRef.update(patch);
+        lastSeen: now,
+        updatedAt: now
+      });
 
       playerRef.get().then(snap => {
         const player = snap.val();
@@ -381,7 +434,15 @@
     logMsg("✅ ROLE同期開始 role-sync.js v" + VERSION);
   }
 
-  window.addEventListener("load", () => {
-    setTimeout(start, 1500);
-  });
+  function bootRoleSync(){
+    if(localStorage.getItem("street_survival_registered") === "true"){
+      setTimeout(start, 1500);
+      return;
+    }
+    window.addEventListener("ss-player-registered", () => {
+      setTimeout(start, 800);
+    }, { once: true });
+  }
+
+  window.addEventListener("load", bootRoleSync);
 })();

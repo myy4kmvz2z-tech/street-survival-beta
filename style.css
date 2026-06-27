@@ -498,164 +498,210 @@ body.low-power *{
   scroll-behavior:auto !important;
 }
 
-/* 参加者登録画面 */
+/* 参加者登録画面（#registerScreen 専用・既存ゲームCSSより優先） */
+html:not(.ss-registered),
 html:not(.ss-registered) body{
-  margin:0;
-  min-height:100vh;
-  min-height:100dvh;
+  margin:0!important;
+  padding:0!important;
+  min-height:100%!important;
+  min-height:100vh!important;
+  min-height:100dvh!important;
+  width:100%!important;
   overflow-x:hidden;
+  background:#06120e!important;
+  background:radial-gradient(circle at top,#0f3d2e 0%,#06120e 55%,#020504 100%)!important;
+  color:#fff!important;
 }
-#registerScreen{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  box-sizing:border-box;
-  min-height:100vh;
-  min-height:100dvh;
-  width:100%;
-  padding:20px;
-  position:fixed;
-  inset:0;
-  z-index:100001;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  background:
-    radial-gradient(circle at 50% -10%, rgba(89,214,141,.18) 0%, transparent 42%),
-    radial-gradient(circle at 50% 100%, rgba(10,40,28,.85) 0%, transparent 55%),
-    linear-gradient(180deg,#0f2e22 0%,#081912 48%,#041009 100%);
-}
+
 #gameScreen{display:none}
 html.ss-registered #registerScreen{display:none!important}
 html.ss-registered #gameScreen{display:block}
-.register-card{
-  width:100%;
-  max-width:420px;
-  margin:auto;
-  box-sizing:border-box;
-  background:linear-gradient(180deg,rgba(17,32,26,.98),rgba(7,15,12,.98));
-  border:1px solid rgba(89,214,141,.22);
-  border-radius:28px;
-  padding:28px 22px 24px;
-  box-shadow:0 24px 60px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.03) inset;
+
+#registerScreen,
+#registerScreen.register-screen,
+.register-screen#registerScreen{
+  position:fixed!important;
+  inset:0!important;
+  z-index:100001!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:center!important;
+  box-sizing:border-box!important;
+  min-height:100vh!important;
+  min-height:100dvh!important;
+  width:100%!important;
+  margin:0!important;
+  padding:20px!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch;
+  background:#06120e!important;
+  background:radial-gradient(circle at top,#0f3d2e 0%,#06120e 55%,#020504 100%)!important;
+  color:#fff!important;
 }
-.register-title{
-  margin:0 0 10px;
-  text-align:center;
-  font-size:clamp(28px,7vw,34px);
-  letter-spacing:.06em;
-  line-height:1.15;
-  color:#f4f1e8;
+
+#registerScreen .register-card{
+  width:100%!important;
+  max-width:420px!important;
+  margin:0 auto!important;
+  box-sizing:border-box!important;
+  background:rgba(5,15,12,.92)!important;
+  border:1px solid rgba(255,255,255,.15)!important;
+  border-radius:24px!important;
+  padding:24px!important;
+  box-shadow:0 20px 60px rgba(0,0,0,.45)!important;
+  color:#fff!important;
 }
-.register-subtitle{
-  margin:0 0 24px;
-  text-align:center;
-  font-size:14px;
-  line-height:1.5;
-  color:rgba(174,183,187,.95);
+
+#registerScreen .register-title{
+  margin:0 0 10px!important;
+  text-align:center!important;
+  font-size:clamp(28px,7vw,34px)!important;
+  letter-spacing:.06em!important;
+  line-height:1.15!important;
+  color:#fff!important;
 }
-.register-label{
-  display:block;
-  margin-bottom:10px;
-  font-size:15px;
-  font-weight:800;
-  color:#d7e8df;
+
+#registerScreen .register-subtitle{
+  margin:0 0 24px!important;
+  text-align:center!important;
+  font-size:14px!important;
+  line-height:1.5!important;
+  color:rgba(255,255,255,.72)!important;
 }
-.register-input{
-  width:100%;
-  max-width:none;
-  margin-bottom:16px;
-  padding:16px 16px;
-  font-size:18px;
-  border-radius:16px;
-  border:1px solid rgba(89,214,141,.28);
-  background:rgba(5,10,8,.92);
-  color:var(--text);
+
+#registerScreen .register-label{
+  display:block!important;
+  margin-bottom:10px!important;
+  font-size:15px!important;
+  font-weight:800!important;
+  color:#fff!important;
 }
-.register-input:focus{
-  outline:none;
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(247,201,72,.18);
+
+#registerScreen .register-input,
+#registerScreen input.register-input{
+  display:block!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0 0 16px!important;
+  padding:16px!important;
+  font-size:18px!important;
+  border-radius:16px!important;
+  border:1px solid rgba(255,255,255,.2)!important;
+  background:#050607!important;
+  color:#fff!important;
 }
-.register-join{
-  width:100%;
-  margin:0 0 20px;
-  padding:17px 16px;
-  font-size:18px;
-  font-weight:1000;
-  border-radius:18px;
-  background:var(--accent);
-  color:#111;
-  box-shadow:0 10px 28px rgba(247,201,72,.28);
+
+#registerScreen .register-input::placeholder{
+  color:rgba(255,255,255,.45)!important;
 }
-.register-join:disabled{
-  opacity:.72;
+
+#registerScreen .register-input:focus{
+  outline:none!important;
+  border-color:#f7c948!important;
+  box-shadow:0 0 0 3px rgba(247,201,72,.22)!important;
 }
-.register-error{
-  white-space:pre-line;
-  background:rgba(255,77,94,.12);
-  border:1px solid var(--danger);
-  color:#ffb4bc;
-  border-radius:14px;
-  padding:12px 14px;
-  margin-bottom:12px;
-  font-size:14px;
-  font-weight:700;
-  line-height:1.5;
+
+#registerScreen .register-join,
+#registerScreen button.register-join{
+  width:100%!important;
+  max-width:none!important;
+  margin:0 0 20px!important;
+  padding:17px 16px!important;
+  font-size:18px!important;
+  font-weight:1000!important;
+  border-radius:18px!important;
+  border:none!important;
+  background:#f7c948!important;
+  color:#111!important;
+  box-shadow:0 10px 28px rgba(247,201,72,.28)!important;
+  cursor:pointer!important;
 }
-.register-notice{
-  background:rgba(5,10,8,.72);
-  border:1px solid rgba(89,214,141,.18);
-  border-radius:16px;
-  padding:16px 16px 14px;
-  margin-bottom:16px;
+
+#registerScreen .register-join:disabled{
+  opacity:.72!important;
 }
-.register-notice strong{
-  display:block;
-  margin-bottom:10px;
-  font-size:15px;
-  color:#d7e8df;
+
+#registerScreen .register-error{
+  white-space:pre-line!important;
+  background:rgba(255,77,94,.18)!important;
+  border:1px solid #ff4d5e!important;
+  color:#ffd6da!important;
+  border-radius:14px!important;
+  padding:12px 14px!important;
+  margin-bottom:12px!important;
+  font-size:14px!important;
+  font-weight:700!important;
+  line-height:1.5!important;
 }
-.register-notice ul{
-  margin:0;
-  padding-left:20px;
-  color:#aeb7bb;
-  font-size:14px;
-  line-height:1.75;
+
+#registerScreen .register-notice{
+  background:rgba(0,0,0,.35)!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  border-radius:16px!important;
+  padding:16px!important;
+  margin-bottom:16px!important;
+  color:rgba(255,255,255,.82)!important;
 }
-.register-notice li+li{
-  margin-top:4px;
+
+#registerScreen .register-notice strong{
+  display:block!important;
+  margin-bottom:10px!important;
+  font-size:15px!important;
+  color:#fff!important;
 }
-.register-agree{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  font-size:15px;
-  font-weight:700;
-  cursor:pointer;
-  padding:14px 14px;
-  border-radius:16px;
-  background:rgba(89,214,141,.08);
-  border:1px solid rgba(89,214,141,.24);
-  color:#e8f5ee;
+
+#registerScreen .register-notice ul{
+  margin:0!important;
+  padding-left:20px!important;
+  color:rgba(255,255,255,.78)!important;
+  font-size:14px!important;
+  line-height:1.75!important;
 }
-.register-agree input{
-  margin:0;
-  width:22px;
-  height:22px;
-  flex-shrink:0;
-  accent-color:var(--accent);
+
+#registerScreen .register-notice li+li{
+  margin-top:4px!important;
 }
+
+#registerScreen .register-agree{
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  font-size:15px!important;
+  font-weight:700!important;
+  cursor:pointer!important;
+  padding:14px!important;
+  border-radius:16px!important;
+  background:rgba(255,255,255,.06)!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  color:#fff!important;
+}
+
+#registerScreen .register-agree span{
+  color:#fff!important;
+}
+
+#registerScreen .register-agree input{
+  margin:0!important;
+  width:22px!important;
+  height:22px!important;
+  max-width:none!important;
+  flex-shrink:0!important;
+  accent-color:#f7c948!important;
+}
+
 .participant-label{
   color:var(--accent)!important;
   font-weight:800;
 }
+
 @media(max-width:640px){
-  #registerScreen{
-    padding:16px;
+  #registerScreen,
+  #registerScreen.register-screen{
+    padding:16px!important;
   }
-  .register-card{
-    padding:24px 18px 20px;
-    border-radius:24px;
+  #registerScreen .register-card{
+    padding:22px 18px!important;
+    border-radius:22px!important;
   }
 }

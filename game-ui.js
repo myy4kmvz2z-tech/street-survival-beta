@@ -197,7 +197,9 @@
     const conn = document.getElementById("connectionStatus");
     const fb = document.getElementById("firebaseStatus");
 
-    if(alert) setText("infoWarning", alert.textContent.replace(/^[^\s]+\s*/, "") || "待機中");
+    if(!document.getElementById("hunterAlertStatus") && alert){
+      setText("infoWarning", alert.textContent.replace(/^[^\s]+\s*/, "") || "待機中");
+    }
 
     if(conn){
       setText("infoConnection", conn.textContent || "確認中");

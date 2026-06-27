@@ -301,6 +301,13 @@
     }, 3000);
   }
 
+  function finishApplyRole(player){
+    if(typeof render === "function") render();
+    if(typeof window.updateGameUI === "function"){
+      window.updateGameUI(player);
+    }
+  }
+
   function applyRole(player, ref){
     if(!player) return;
 
@@ -332,7 +339,7 @@
       hud.style.display = "none";
       setText("hunterTimer", "-");
       lastHunterEndsAt = null;
-      if(typeof render === "function") render();
+      finishApplyRole(player);
       return;
     }
 
@@ -342,7 +349,7 @@
       hud.style.display = "block";
       hud.textContent = "🟢 HUNTER MODE";
       setText("hunterTimer", "HUNTER");
-      if(typeof render === "function") render();
+      finishApplyRole(player);
       return;
     }
 
@@ -357,7 +364,7 @@
       hud.textContent = "🔵 RUNNERへ戻ります...";
       setText("hunterTimer", "0:00");
       returnToRunner(ref);
-      if(typeof render === "function") render();
+      finishApplyRole(player);
       return;
     }
 
@@ -367,7 +374,7 @@
     hud.textContent = "🟢 HUNTER 残り " + time;
     setText("hunterTimer", time);
 
-    if(typeof render === "function") render();
+    finishApplyRole(player);
   }
 
   async function start(){

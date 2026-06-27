@@ -736,3 +736,382 @@ html.ss-registered #gameScreen {
   text-align: center !important;
   color: rgba(255,255,255,0.55) !important;
 }
+
+/* ===== 本番デザイン v1.0 ゲーム画面 ===== */
+.game-legacy-hidden {
+  display: none !important;
+}
+
+html.ss-registered body {
+  background: radial-gradient(circle at top, #0f3d2e 0%, #06120e 55%, #020504 100%);
+}
+
+.game-screen {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #0f3d2e 0%, #06120e 55%, #020504 100%);
+  color: #f4f1e8;
+}
+
+.game-screen.theme-runner {
+  --game-accent: #5aa0ff;
+  --game-glow: rgba(90, 160, 255, 0.35);
+}
+
+.game-screen.theme-hunter {
+  --game-accent: #59d68d;
+  --game-glow: rgba(255, 77, 94, 0.42);
+}
+
+.game-screen.theme-safe {
+  --game-accent: #59d68d;
+  --game-glow: rgba(89, 214, 141, 0.45);
+}
+
+.game-screen.theme-boss {
+  --game-accent: #fb923c;
+  --game-glow: rgba(251, 146, 60, 0.45);
+}
+
+.game-screen.theme-final {
+  --game-accent: #ff4d5e;
+  --game-glow: rgba(255, 77, 94, 0.55);
+}
+
+.game-screen.theme-alert {
+  --game-accent: #ff4d5e;
+  --game-glow: rgba(255, 77, 94, 0.5);
+}
+
+.game-screen.theme-unknown {
+  --game-accent: #aeb4bb;
+  --game-glow: rgba(174, 180, 187, 0.25);
+}
+
+.game-top-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: rgba(2, 8, 6, 0.92);
+  padding: 16px 18px 14px;
+}
+
+.game-top-header h1 {
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  color: #f7c948;
+}
+
+.game-top-header .participant-label {
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-weight: 700 !important;
+  margin-top: 4px;
+}
+
+.game-top-header .ghost {
+  font-size: 11px;
+  padding: 8px 12px;
+  opacity: 0.55;
+}
+
+.game-hud {
+  max-width: 480px;
+  padding: 14px 16px 28px;
+  gap: 14px;
+}
+
+.event-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+}
+
+.event-badge.event-normal { border-color: rgba(174, 180, 187, 0.35); color: #d5d9de; }
+.event-badge.event-alert { border-color: #f7c948; color: #f7c948; background: rgba(247, 201, 72, 0.12); }
+.event-badge.event-boss { border-color: #fb923c; color: #ffb07a; background: rgba(251, 146, 60, 0.14); }
+.event-badge.event-mission { border-color: #f7c948; color: #ffe08a; background: rgba(247, 201, 72, 0.12); }
+.event-badge.event-live { border-color: #5eead4; color: #9ef5e8; background: rgba(94, 234, 212, 0.12); }
+.event-badge.event-safe { border-color: #59d68d; color: #8ef0b8; background: rgba(89, 214, 141, 0.12); }
+.event-badge.event-final { border-color: #ff4d5e; color: #ff8a96; background: rgba(255, 77, 94, 0.16); animation: gameBadgePulse 0.8s alternate infinite; }
+.event-badge.event-end { border-color: #c0c0c0; color: #ececec; }
+.event-badge.event-emergency { border-color: #ff4d5e; color: #fff; background: rgba(255, 77, 94, 0.28); animation: gameBadgePulse 0.45s alternate infinite; }
+.event-badge.event-radio { border-color: #f7c948; color: #f7c948; }
+
+@keyframes gameBadgePulse {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.35); }
+}
+
+.status-hero {
+  min-height: auto !important;
+  padding: 28px 20px 22px !important;
+  border-radius: 28px !important;
+  border-width: 3px !important;
+  margin-top: 2px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 40px var(--game-glow, rgba(90, 160, 255, 0.2));
+}
+
+.status-hero .status-role-icon,
+.status-hero .status-icon {
+  font-size: 64px !important;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.status-hero .status-role,
+.status-hero .status-title {
+  font-size: clamp(42px, 11vw, 56px) !important;
+  font-weight: 1000 !important;
+  letter-spacing: 0.08em !important;
+  line-height: 1 !important;
+  color: #fff !important;
+  text-shadow: 0 0 24px var(--game-glow, rgba(90, 160, 255, 0.35));
+}
+
+.status-hero .status-subtitle,
+.status-hero .status-sub {
+  font-size: clamp(22px, 6vw, 28px) !important;
+  font-weight: 900 !important;
+  margin-top: 10px !important;
+  color: var(--game-accent, #5aa0ff) !important;
+}
+
+.status-hero .game-status-note,
+.status-hero .status-note {
+  font-size: 16px !important;
+  margin-top: 12px !important;
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+.status-hero.theme-hunter.runner-mode,
+.status-hero.hunter-mode {
+  border-color: #59d68d !important;
+  background: linear-gradient(180deg, rgba(89, 214, 141, 0.12), rgba(7, 9, 12, 0.95)) !important;
+}
+
+.status-hero.theme-unknown {
+  border-color: rgba(174, 180, 187, 0.4) !important;
+}
+
+.hp-card {
+  margin-top: 22px;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 14px 16px;
+}
+
+.hp-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.hp-card-head b {
+  font-size: 20px;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+.hp-bar,
+.status-hero .hp-line {
+  height: 18px !important;
+  margin-top: 0 !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 999px !important;
+}
+
+.hp-fill {
+  transition: width 0.35s ease, background 0.35s ease !important;
+}
+
+.hp-fill.hp-high {
+  background: linear-gradient(90deg, #59d68d, #8ef0b8) !important;
+}
+
+.hp-fill.hp-mid {
+  background: linear-gradient(90deg, #f7c948, #ffe08a) !important;
+}
+
+.hp-fill.hp-low {
+  background: linear-gradient(90deg, #ff4d5e, #ff8a96) !important;
+  animation: hpWarnPulse 0.7s alternate infinite;
+}
+
+@keyframes hpWarnPulse {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.25); }
+}
+
+.hunter-time-card {
+  background: linear-gradient(180deg, rgba(89, 214, 141, 0.16), rgba(5, 10, 8, 0.92));
+  border: 2px solid rgba(89, 214, 141, 0.45);
+  border-radius: 22px;
+  padding: 18px 20px;
+  text-align: center;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.hunter-time-card.is-idle {
+  opacity: 0.45;
+  transform: scale(0.96);
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 12px 16px;
+}
+
+.hunter-time-label {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.62);
+  margin-bottom: 6px;
+}
+
+.hunter-time-card:not(.is-idle) .hunter-time-label {
+  color: #8ef0b8;
+}
+
+.hunter-time-value {
+  font-size: clamp(36px, 10vw, 52px);
+  font-weight: 1000;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 20px rgba(89, 214, 141, 0.45);
+}
+
+.hunter-time-card.is-idle .hunter-time-value {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.35);
+  text-shadow: none;
+}
+
+.radio-card {
+  background: linear-gradient(180deg, rgba(247, 201, 72, 0.14), rgba(5, 10, 8, 0.92));
+  border: 2px solid rgba(247, 201, 72, 0.35);
+  border-radius: 20px;
+  padding: 16px 18px;
+}
+
+.radio-card-label {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: #f7c948;
+  margin-bottom: 8px;
+}
+
+.radio-card-text {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.45;
+  color: #fff;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.info-grid > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.info-grid span {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.info-grid b {
+  font-size: 15px;
+  font-weight: 900;
+  color: #fff;
+  text-align: right;
+}
+
+.bottom-tools {
+  background: rgba(0, 0, 0, 0.28) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 10px 12px !important;
+}
+
+.bottom-tools summary {
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.55) !important;
+  font-weight: 700 !important;
+}
+
+.bottom-tools button {
+  font-size: 13px !important;
+  padding: 10px 12px !important;
+  margin-top: 8px;
+}
+
+.bottom-tools-note {
+  display: block;
+  margin: 6px 0 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+}
+
+.game-screen .firebase-status {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  z-index: 900;
+  font-size: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  opacity: 0.65;
+  max-width: 46vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#roleSyncHud {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .game-hud {
+    padding: 12px 14px 24px;
+    gap: 12px;
+  }
+
+  .status-hero {
+    padding: 24px 16px 18px !important;
+  }
+
+  .status-hero .status-role-icon,
+  .status-hero .status-icon {
+    font-size: 56px !important;
+  }
+}

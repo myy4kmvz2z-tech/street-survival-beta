@@ -16,10 +16,10 @@
 </head>
 <body>
 
-<div id="gameScreen">
-<header class="top-header">
+<div id="gameScreen" class="game-screen">
+<header class="top-header game-top-header">
   <div>
-    <h1>STREET SURVIVAL β10.3</h1>
+    <h1 id="gameEventTitle">STREET SURVIVAL</h1>
     <p id="participantLabel" class="participant-label">参加者：---</p>
   </div>
   <button id="resetBtn" class="ghost">RESET</button>
@@ -45,43 +45,59 @@
   <strong id="radioPopupText">本町で戦闘発生！</strong>
 </div>
 
-<main class="hud">
-  <section class="ops-panel" id="opsPanel">
+<main class="hud game-hud">
+  <div id="eventBadge" class="event-badge event-normal">通常</div>
+
+  <section class="ops-panel game-legacy-hidden" id="opsPanel">
     <div><span>📶 通信</span><b id="connectionStatus">確認中</b></div>
     <div><span>🔋 省電力</span><b id="batteryStatus">ON</b></div>
     <div><span>🧹 整理</span><b id="cleanupStatus">待機</b></div>
   </section>
 
-  <div class="light-mode-note">β10.0 Cleanup / 六斎市実戦軽量版</div>
-  <section class="notify-panel" id="notifyPanel">
-    <button id="notifyBtn" class="notify-btn">🔔 通知を許可</button>
-    <span id="notifyStatus">通知: 未確認</span>
-  </section>
+  <div class="light-mode-note game-legacy-hidden">β10.0 Cleanup / 六斎市実戦軽量版</div>
 
-
-  <section id="statusPanel" class="status-panel runner-mode">
-    <div class="player-row">
+  <section id="statusPanel" class="status-panel status-hero runner-mode theme-runner">
+    <div class="player-row game-legacy-hidden">
       <input id="playerName" value="RED"/>
       <span id="roleBadge" class="badge runner">RUNNER</span>
     </div>
 
-    <div id="statusIcon" class="status-icon">🔵</div>
-    <div id="statusTitle" class="status-title">RUNNER</div>
-    <div id="statusSub" class="status-sub">🏃 生存中</div>
-    <div id="statusNote" class="status-note">👀 気配なし</div>
+    <div id="statusIcon" class="status-icon status-role-icon">🔵</div>
+    <div id="statusTitle" class="status-title status-role">RUNNER</div>
+    <div id="statusSub" class="status-sub status-subtitle">逃走中</div>
+    <div id="statusNote" class="status-note game-status-note">👀 気配なし</div>
 
-    <div class="hud-stats">
-      <div><span>❤️</span><b id="hpText">100/300</b></div>
+    <div class="hud-stats game-legacy-hidden">
+      <div><span>❤️</span><b>100/300</b></div>
       <div><span>👥</span><b id="totalPlayers">0</b></div>
       <div><span>🔥</span><b id="cityModeMini">NORMAL</b></div>
       <div><span>⏰</span><b id="eventTimer">6:00</b></div>
     </div>
 
-    <div class="hp-line">
-      <div id="hpBar" class="hp-fill"></div>
-      <div id="chargeFloat" class="charge-float hidden">❤️ +2</div>
+    <div class="hp-card">
+      <div class="hp-card-head"><span>HP</span> <b id="hpText">100/300</b></div>
+      <div class="hp-line hp-bar">
+        <div id="hpBar" class="hp-fill"></div>
+        <div id="chargeFloat" class="charge-float hidden">❤️ +2</div>
+      </div>
     </div>
   </section>
+
+  <div class="hunter-time-card" id="hunterTimeCard">
+    <div class="hunter-time-label">HUNTER TIME</div>
+    <div id="hunterTimeLarge" class="hunter-time-value">--:--</div>
+  </div>
+
+  <div class="radio-card" id="radioCard">
+    <div class="radio-card-label">📻 RADIO</div>
+    <div id="radioCardText" class="radio-card-text">RADIO待機中</div>
+  </div>
+
+  <div class="info-grid">
+    <div><span>現在地</span><b id="infoGps">確認中</b></div>
+    <div><span>接近警告</span><b id="infoWarning">待機中</b></div>
+    <div><span>通信</span><b id="infoConnection">確認中</b></div>
+  </div>
 
   <section class="scanner-section">
     <div class="scanner-head">
@@ -135,7 +151,7 @@
     </div>
   </section>
 
-  <div id="radioTicker" class="radio-ticker">📻 ゲーム開始 ｜ 👹 BOSS ｜ 🎯 本町集合 ｜ 🎵 LIVE SAFE</div>
+  <div id="radioTicker" class="radio-ticker game-legacy-hidden">📻 ゲーム開始 ｜ 👹 BOSS ｜ 🎯 本町集合 ｜ 🎵 LIVE SAFE</div>
 
   <section class="action-row">
     <button id="gpsBtn" class="secondary">📍 GPS</button>
@@ -155,7 +171,6 @@
     </div>
 
     <button id="vibeBtn" class="secondary full">🔊 演出テスト</button>
-    <button id="vibrationTestBtn" class="secondary full">📳 バイブテスト</button>
 
     <div id="soundTestButtons" class="sound-test-buttons">
       <button id="safeSoundBtn">🛡 SAFE音</button>
@@ -175,8 +190,16 @@
     <p id="alertStatus" class="alert-box">🔵 ランナー：通常</p>
     <p id="battleStatus" class="notice">現在：通常エリア</p>
     <p id="gpsStatus" class="hint">GPS未取得。iPhone Safariで位置情報を許可してください。</p>
-    <button id="registerResetBtn" class="secondary full">🔁 登録リセット（テスト用）</button>
   </details>
+
+  <details class="bottom-tools">
+    <summary>⚙ テスト / 設定</summary>
+    <button id="notifyBtn" class="secondary full" type="button">🔔 通知を許可</button>
+    <span id="notifyStatus" class="bottom-tools-note">通知: 未確認</span>
+    <button id="vibrationTestBtn" class="secondary full" type="button">📳 バイブテスト</button>
+    <button id="registerResetBtn" class="secondary full" type="button">🔁 登録リセット（テスト用）</button>
+  </details>
+
   <details class="sub-panel">
     <summary>🌆 街ステータス / ログ</summary>
     <div class="player-counts">
@@ -258,6 +281,7 @@
 <script src="role-sync.js?v=5"></script>
 <script src="settings-sync.js?v=1"></script>
 <script src="emergency-sync.js?v=1"></script>
+<script src="game-ui.js?v=2"></script>
 
 
 <script>

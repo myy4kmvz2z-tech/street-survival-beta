@@ -166,6 +166,21 @@ function bearingMeters(a,b){const latScale=111320,lngScale=111320*Math.cos(a.lat
 function setRadarPos(id,target,visible=true){const el=$(id);if(!el)return;if(!visible){el.classList.add("hidden");return;}el.classList.remove("hidden");const v=bearingMeters(state.me,target);const range=CONFIG.radarRangeM;let x=50+(v.x/range)*42,y=50+(v.y/range)*42;x=clamp(x,8,92);y=clamp(y,8,92);el.style.left=x+"%";el.style.top=y+"%";el.style.transform="translate(-50%,-50%)";}
 function updateRadar(nearest,distance,zone){const radar=$("radar");radar.classList.remove("safe","danger","final");if(zone)radar.classList.add("safe");if(state.cityMode==="FINAL")radar.classList.add("final");if(nearest&&distance<=20)radar.classList.add("danger");setRadarPos("radarOnn",state.zones[0],true);setRadarPos("radarCoffee",state.zones[1],true);setRadarPos("radarFood",state.zones[2],true);setRadarPos("radarHonmachi",state.zones[3],true);setRadarPos("radarShinmachi",state.zones[4],true);setRadarPos("radarBoss",{lat:35.49985,lng:137.50455},state.bossActive);setRadarPos("radarMission",state.zones[3],state.missionActive);$("gameBoss").classList.toggle("hidden",!state.bossActive);$("gameMission").classList.toggle("hidden",!state.missionActive);if(nearest&&nearest.role==="hunter"&&distance<=30){setRadarPos("radarHunter",nearest,true);$("radarWarning").classList.toggle("hidden",distance>CONFIG.battleRangeM);}else{$("radarHunter").classList.add("hidden");$("radarWarning").classList.add("hidden");}$("safePulse").classList.toggle("hidden",!zone);}
 function vibrate(pattern){if("vibrate" in navigator){try{navigator.vibrate(pattern)}catch(e){}}}
+function runVibrationTest(){
+  if(typeof showEffect === "function"){
+    showEffect("notice", "📳", "VIBE TEST");
+  }
+  if("vibrate" in navigator){
+    try{
+      navigator.vibrate([120, 80, 120, 80, 250]);
+      addLog("📳 バイブテスト実行");
+    }catch(e){
+      addLog("📳 この端末はWebバイブ非対応です");
+    }
+  }else{
+    addLog("📳 この端末はWebバイブ非対応です");
+  }
+}
 function alertVibration(level){
   const now = Date.now();
 
@@ -249,6 +264,7 @@ function triggerSafe(){state.liveActive=true;setCityMode("SAFE");setRadio("🛡 
 function triggerFinal(){state.bossActive=true;state.missionActive=true;setCityMode("FINAL");setRadio("🔥 FINAL BATTLE");updateStatus("final-mode","🔥","FINAL","BATTLE","HP吸収2倍 / POINT2倍");showFullEvent("🔥","FINAL BATTLE","HP吸収2倍・POINT2倍","final");showEffect("final","🔥","FINAL BATTLE");vibrate([250,80,250,80,400]);render();}
 function triggerEnd(){state.bossActive=false;state.missionActive=false;state.liveActive=false;setCityMode("END");setRadio("🏆 GAME END");updateStatus("boss-mode","🏆","GAME END","お疲れさまでした","お宿 Onn前へ");showFullEvent("🏆","GAME END","お疲れさまでした","");showEffect("end","🏆","GAME END");vibrate([120,80,120,80,300]);render();}
 document.addEventListener("DOMContentLoaded",()=>{initMap();document.querySelectorAll("[data-move]").forEach(btn=>btn.addEventListener("click",()=>move(btn.dataset.move)));window.addEventListener("keydown",e=>{if(e.key==="ArrowUp")move("up");if(e.key==="ArrowDown")move("down");if(e.key==="ArrowLeft")move("left");if(e.key==="ArrowRight")move("right");});$("gpsBtn").addEventListener("click",startGps);$("resetBtn").addEventListener("click",reset);$("roleBtn").addEventListener("click",()=>setRole(state.me.role==="hunter"?"runner":"hunter"));$("menuBtn").addEventListener("click",()=>{$("menuPanel").open=!$("menuPanel").open;});if($("effectBtn")) $("effectBtn").addEventListener("click",()=>{showEffect("notice","🔊","FX TEST");addLog("🔊 FX TEST");});$("vibeBtn").addEventListener("click",()=>{showEffect("notice","🔊","FX TEST");vibrate([120,80,120]);addLog("🔊 FX TEST");});
+if($("vibrationTestBtn")) $("vibrationTestBtn").addEventListener("click", runVibrationTest);
 if($("safeSoundBtn")) $("safeSoundBtn").addEventListener("click",()=>{showEffect("safe","🛡","SAFE SOUND");addLog("🛡 SAFE SOUND");});
 if($("bossSoundBtn")) $("bossSoundBtn").addEventListener("click",()=>{showEffect("boss","👹","BOSS SOUND");addLog("👹 BOSS SOUND");});
 if($("missionSoundBtn")) $("missionSoundBtn").addEventListener("click",()=>{showEffect("mission","🎯","MISSION SOUND");addLog("🎯 MISSION SOUND");});

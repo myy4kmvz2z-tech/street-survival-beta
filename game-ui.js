@@ -274,6 +274,9 @@
         if(cmd.type === "RADIO" && cmd.message){
           window.updateRadioCard(cmd.message);
         }
+        if(cmd.type === "CAPTURE" && cmd.message){
+          window.updateRadioCard(cmd.message);
+        }
       }
       updateGameUIFromState();
     };
@@ -306,6 +309,9 @@
       if(cmd){
         window.updateEventBadge(cmd);
         if(cmd.type === "RADIO" && cmd.message){
+          window.updateRadioCard(cmd.message);
+        }
+        if(cmd.type === "CAPTURE" && cmd.message){
           window.updateRadioCard(cmd.message);
         }
       }

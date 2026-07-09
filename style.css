@@ -1088,6 +1088,9 @@ html.ss-registered body {
 }
 
 .hunter-alert-status {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   border-radius: 16px;
   padding: 14px;
   margin: 10px 0;
@@ -1097,6 +1100,25 @@ html.ss-registered body {
   font-size: clamp(16px, 4.5vw, 20px);
   line-height: 1.45;
   white-space: pre-line;
+  position: relative;
+  z-index: 50;
+}
+
+.hunter-alert-debug {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  border-radius: 12px;
+  padding: 10px;
+  margin: 8px 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.75);
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.12);
+  white-space: pre-line;
+  position: relative;
+  z-index: 50;
 }
 
 .hunter-alert-safe {
@@ -1118,6 +1140,18 @@ html.ss-registered body {
   background: rgba(255,0,0,0.28);
   color: #fff;
   box-shadow: 0 0 28px rgba(255,0,0,0.45);
+}
+
+.capture-status {
+  border-radius: 14px;
+  padding: 12px;
+  margin: 10px 0;
+  font-weight: 900;
+  text-align: center;
+  background: rgba(255,80,40,0.18);
+  color: #fff;
+  border: 1px solid rgba(255,120,80,0.35);
+  white-space: pre-line;
 }
 
 .safe-area-banner {

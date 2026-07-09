@@ -1,10 +1,12 @@
-/* HUNTER ALERT SYNC v2.0 - RUNNER向け HUNTER接近警告（テスト対応） */
+/* HUNTER ALERT SYNC v3.0 - 画面デバッグ必須版 */
 
 (function(){
-  const VERSION = 2;
+  const VERSION = 3;
   const STALE_MS = 5 * 60 * 1000;
-  const DUMMY_STALE_MS = 10 * 60 * 1000;
+  const DUMMY_STALE_MS = 30 * 60 * 1000;
   const DANGER_RANGE_M = 10;
+  const WARNING_RANGE_DEFAULT = 15;
+  const BATTLE_RANGE_DEFAULT = 7;
   const VIBRATE_MIN_MS = 3000;
   const SAVE_MIN_MS = 3000;
   const EVAL_INTERVAL_MS = 2000;
@@ -20,26 +22,96 @@
   let lastVibrateAt = 0;
   let lastSaveAt = 0;
   let lastSavedLevel = null;
-  let lastLoggedNearestKey = null;
+  let lastDebugText = "";
+
+  function ensureElements(){
+    let statusEl = document.getElementById("hunterAlertStatus");
+    let debugEl = document.getElementById("hunterAlertDebug");
+
+    const radio = document.getElementById("radioCard");
+    const safeBanner = document.getElementById("safeAreaBanner");
+    const insertBefore = safeBanner || document.getElementById("safeZoneStatus");
+    const parent = (radio && radio.parentNode) ||
+      (insertBefore && insertBefore.parentNode) ||
+      document.querySelector(".game-hud") ||
+      document.getElementById("gameScreen") ||
+      document.body;
+
+    if(!statusEl){
+      statusEl = document.createElement("div");
+      statusEl.id = "hunterAlertStatus";
+      statusEl.className = "hunter-alert-status hunter-alert-safe";
+      statusEl.textContent = "🟢 周囲安全";
+      if(radio && radio.parentNode){
+        radio.parentNode.insertBefore(statusEl, radio.nextSibling);
+      }else if(insertBefore && insertBefore.parentNode){
+        insertBefore.parentNode.insertBefore(statusEl, insertBefore);
+      }else if(parent){
+        parent.appendChild(statusEl);
+      }
+    }
+
+    if(!debugEl){
+      debugEl = document.createElement("div");
+      debugEl.id = "hunterAlertDebug";
+      debugEl.className = "hunter-alert-debug";
+      debugEl.textContent = "HUNTER警告: 起動待ち";
+      if(statusEl && statusEl.parentNode){
+        statusEl.parentNode.insertBefore(debugEl, statusEl.nextSibling);
+      }else if(parent){
+        parent.appendChild(debugEl);
+      }
+    }
+
+    statusEl.style.display = "block";
+    statusEl.style.visibility = "visible";
+    statusEl.style.opacity = "1";
+    debugEl.style.display = "block";
+    debugEl.style.visibility = "visible";
+    debugEl.style.opacity = "1";
+
+    return { statusEl: statusEl, debugEl: debugEl };
+  }
+
+  function setStatus(text, cssClass){
+    const els = ensureElements();
+    const el = els.statusEl;
+    if(!el) return;
+
+    el.classList.remove(
+      "hunter-alert-safe",
+      "hunter-alert-warning",
+      "hunter-alert-danger",
+      "hunter-alert-critical",
+      "hidden"
+    );
+    el.classList.add(cssClass || "hunter-alert-safe");
+    el.textContent = text;
+
+    const info = document.getElementById("infoWarning");
+    if(info){
+      const first = String(text || "").split("\n")[0] || "待機中";
+      info.textContent = first.replace(/^[^\s]+\s*/, "").trim() || first;
+    }
+  }
+
+  function setDebug(text){
+    const els = ensureElements();
+    const el = els.debugEl;
+    if(!el) return;
+    const next = String(text || "");
+    el.textContent = next;
+    if(next !== lastDebugText){
+      lastDebugText = next;
+      console.log("[hunter-alert-sync]", next);
+    }
+  }
 
   function logMsg(msg){
     if(typeof addLog === "function"){
       addLog(msg);
     }
     console.log("[hunter-alert-sync]", msg);
-  }
-
-  function debug(msg, data){
-    if(data !== undefined){
-      console.log("[hunter-alert-sync]", msg, data);
-    }else{
-      console.log("[hunter-alert-sync]", msg);
-    }
-  }
-
-  function setText(id, text){
-    const el = document.getElementById(id);
-    if(el) el.textContent = text;
   }
 
   function getPlayerId(){
@@ -64,18 +136,11 @@
     return null;
   }
 
-  function canStart(){
-    if(!window.firebase || typeof firebase.database !== "function") return false;
-    if(!getDb()) return false;
-    if(!getPlayerId()) return false;
-    return true;
-  }
-
   function getRanges(){
     const settings = window.STREET_SURVIVAL_SETTINGS || {};
     return {
-      warningRange: Number(settings.warningRange) > 0 ? Number(settings.warningRange) : 15,
-      battleRange: Number(settings.battleRange) > 0 ? Number(settings.battleRange) : 7,
+      warningRange: Number(settings.warningRange) > 0 ? Number(settings.warningRange) : WARNING_RANGE_DEFAULT,
+      battleRange: Number(settings.battleRange) > 0 ? Number(settings.battleRange) : BATTLE_RANGE_DEFAULT,
       dangerRange: DANGER_RANGE_M
     };
   }
@@ -98,7 +163,6 @@
     const playerTs = player ? Number(player.updatedAt) : 0;
     const ts = Math.max(locTs, playerTs);
     if(!ts) return false;
-
     const maxAge = player && player.isDummy === true ? DUMMY_STALE_MS : STALE_MS;
     return Date.now() - ts <= maxAge;
   }
@@ -116,19 +180,20 @@
   }
 
   function isInSafeZone(){
-    if(window.STREET_SURVIVAL_CURRENT_SAFE_ZONE){
-      return true;
-    }
-    if(selfPlayer && selfPlayer.isSafe === true){
-      return true;
-    }
+    if(window.STREET_SURVIVAL_CURRENT_SAFE_ZONE) return true;
+    if(selfPlayer && selfPlayer.isSafe === true) return true;
     return false;
   }
 
   function getOwnLocation(){
     const live = window.STREET_SURVIVAL_CURRENT_LOCATION;
     if(live && Number.isFinite(Number(live.lat)) && Number.isFinite(Number(live.lng))){
-      return { lat: Number(live.lat), lng: Number(live.lng), source: "live" };
+      return { lat: Number(live.lat), lng: Number(live.lng), source: "STREET_SURVIVAL_CURRENT_LOCATION" };
+    }
+
+    const fallback = window.CURRENT_LOCATION;
+    if(fallback && Number.isFinite(Number(fallback.lat)) && Number.isFinite(Number(fallback.lng))){
+      return { lat: Number(fallback.lat), lng: Number(fallback.lng), source: "CURRENT_LOCATION" };
     }
 
     if(selfPlayer && selfPlayer.location){
@@ -139,32 +204,12 @@
       }
     }
 
-    const fallback = window.CURRENT_LOCATION;
-    if(fallback && Number.isFinite(Number(fallback.lat)) && Number.isFinite(Number(fallback.lng))){
-      return { lat: Number(fallback.lat), lng: Number(fallback.lng), source: "current" };
-    }
-
     return null;
-  }
-
-  function countHunterCandidates(myId){
-    let count = 0;
-    Object.keys(allPlayers).forEach(playerId => {
-      if(playerId === myId) return;
-      const player = allPlayers[playerId];
-      if(!player || String(player.role || "").toUpperCase() !== "HUNTER") return;
-      if(!player.location) return;
-      const lat = Number(player.location.lat);
-      const lng = Number(player.location.lng);
-      if(!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-      if(!isFresh(player)) return;
-      count += 1;
-    });
-    return count;
   }
 
   function findNearestHunter(myLat, myLng, myId){
     let nearest = null;
+    let count = 0;
 
     Object.keys(allPlayers).forEach(playerId => {
       if(playerId === myId) return;
@@ -178,34 +223,33 @@
       if(!Number.isFinite(lat) || !Number.isFinite(lng)) return;
       if(!isFresh(player)) return;
 
+      count += 1;
       const distanceM = Math.round(getDistanceMeters(myLat, myLng, lat, lng));
-      const updatedAt = Number(player.location.updatedAt) || Number(player.updatedAt) || 0;
 
       if(!nearest || distanceM < nearest.distanceM){
         nearest = {
           playerId: playerId,
           nickname: player.nickname || player.name || playerId,
           distanceM: distanceM,
-          updatedAt: updatedAt,
+          lat: lat,
+          lng: lng,
           isDummy: player.isDummy === true
         };
       }
     });
 
-    return nearest;
+    return { nearest: nearest, count: count };
   }
 
   function computeAlertLevel(distanceM, ranges){
-    if(distanceM == null || !Number.isFinite(distanceM)){
-      return "safe";
-    }
+    if(distanceM == null || !Number.isFinite(distanceM)) return "safe";
     if(distanceM <= ranges.battleRange) return "critical";
     if(distanceM <= ranges.dangerRange) return "danger";
     if(distanceM <= ranges.warningRange) return "warning";
     return "safe";
   }
 
-  function buildDisplay(level, nearest, options){
+  function buildStatusText(level, nearest, options){
     const isHunter = options.isHunter;
     const inSafe = options.inSafe;
     const lines = [];
@@ -217,17 +261,12 @@
       }else{
         lines.push("近くに他のHUNTERはいません");
       }
-
-      let css = "hunter-alert-safe";
-      if(level === "warning") css = "hunter-alert-warning";
-      if(level === "danger") css = "hunter-alert-danger";
-      if(level === "critical") css = "hunter-alert-critical";
-
       return {
-        level: level,
         text: lines.join("\n"),
-        css: css,
-        infoTitle: "自分はHUNTER"
+        css: level === "critical" ? "hunter-alert-critical"
+          : level === "danger" ? "hunter-alert-danger"
+          : level === "warning" ? "hunter-alert-warning"
+          : "hunter-alert-safe"
       };
     }
 
@@ -240,134 +279,47 @@
         lines.push("近くにHUNTERはいません");
         lines.push("※ SAFE中のためバイブ停止");
       }
-
-      let css = "hunter-alert-safe";
-      if(level === "warning") css = "hunter-alert-warning";
-      if(level === "danger") css = "hunter-alert-danger";
-      if(level === "critical") css = "hunter-alert-critical";
-
       return {
-        level: level,
         text: lines.join("\n"),
-        css: css,
-        infoTitle: "SAFE中"
+        css: level === "critical" ? "hunter-alert-critical"
+          : level === "danger" ? "hunter-alert-danger"
+          : level === "warning" ? "hunter-alert-warning"
+          : "hunter-alert-safe"
       };
     }
 
-    if(level === "safe" || !nearest){
+    if(!nearest){
       return {
-        level: "safe",
-        text: "🟢 周囲安全\n近くにHUNTERはいません",
-        css: "hunter-alert-safe",
-        infoTitle: "周囲安全"
+        text: "🟢 周囲安全",
+        css: "hunter-alert-safe"
       };
     }
 
-    const dist = "約" + nearest.distanceM + "m";
-
-    if(level === "warning"){
+    if(level === "critical"){
       return {
-        level: "warning",
-        text: "⚠️ HUNTER接近\n" + dist,
-        css: "hunter-alert-warning",
-        infoTitle: "HUNTER接近"
+        text: "🔥 超危険\nHUNTERがすぐ近くです\n約" + nearest.distanceM + "m",
+        css: "hunter-alert-critical"
       };
     }
 
     if(level === "danger"){
       return {
-        level: "danger",
-        text: "🚨 HUNTER危険\n" + dist,
-        css: "hunter-alert-danger",
-        infoTitle: "HUNTER危険"
+        text: "🚨 HUNTER危険\n約" + nearest.distanceM + "m",
+        css: "hunter-alert-danger"
+      };
+    }
+
+    if(level === "warning"){
+      return {
+        text: "⚠️ HUNTER接近\n約" + nearest.distanceM + "m",
+        css: "hunter-alert-warning"
       };
     }
 
     return {
-      level: "critical",
-      text: "🔥 超危険\nHUNTERがすぐ近くです\n" + dist,
-      css: "hunter-alert-critical",
-      infoTitle: "超危険"
+      text: "🟢 周囲安全\n最寄りHUNTER 約" + nearest.distanceM + "m",
+      css: "hunter-alert-safe"
     };
-  }
-
-  function ensureAlertElement(){
-    let el = document.getElementById("hunterAlertStatus");
-    if(el) return el;
-
-    el = document.createElement("div");
-    el.id = "hunterAlertStatus";
-    el.className = "hunter-alert-status hunter-alert-safe";
-    el.textContent = "🟢 周囲安全";
-
-    const anchor =
-      document.getElementById("safeZoneStatus") ||
-      document.getElementById("healerZoneStatus") ||
-      document.getElementById("radioCard") ||
-      document.getElementById("safeAreaBanner");
-
-    if(anchor && anchor.parentNode){
-      if(anchor.nextSibling){
-        anchor.parentNode.insertBefore(el, anchor.nextSibling);
-      }else{
-        anchor.parentNode.appendChild(el);
-      }
-    }else if(document.body){
-      document.body.appendChild(el);
-    }
-
-    return el;
-  }
-
-  function updateAlertUI(display){
-    const el = ensureAlertElement();
-    if(!el) return;
-
-    el.classList.remove(
-      "hunter-alert-safe",
-      "hunter-alert-warning",
-      "hunter-alert-danger",
-      "hunter-alert-critical",
-      "hidden"
-    );
-
-    el.classList.add(display.css);
-    el.textContent = display.text;
-    setText("infoWarning", display.infoTitle || "待機中");
-  }
-
-  function showNoLocation(){
-    const el = ensureAlertElement();
-    if(!el) return;
-    el.classList.remove(
-      "hunter-alert-safe",
-      "hunter-alert-warning",
-      "hunter-alert-danger",
-      "hunter-alert-critical",
-      "hidden"
-    );
-    el.classList.add("hunter-alert-warning");
-    el.textContent = "HUNTER警告: 自分の位置情報なし";
-    setText("infoWarning", "位置情報なし");
-  }
-
-  function logLevelChange(level){
-    if(level === lastAlertLevel) return;
-    const prev = lastAlertLevel;
-    lastAlertLevel = level;
-
-    const map = {
-      safe: "🟢 周囲安全",
-      warning: "⚠️ HUNTER接近",
-      danger: "🚨 HUNTER危険",
-      critical: "🔥 超危険"
-    };
-
-    if(map[level]){
-      logMsg(map[level]);
-    }
-
-    debug("警告レベル変更", { from: prev, to: level });
   }
 
   function tryVibrate(level, options){
@@ -380,83 +332,53 @@
 
     try{
       if(!navigator.vibrate) return;
-      if(level === "warning"){
-        navigator.vibrate([120]);
-      }else if(level === "danger"){
-        navigator.vibrate([200, 100, 200]);
-      }else if(level === "critical"){
-        navigator.vibrate([300, 100, 300, 100, 300]);
-      }
+      if(level === "warning") navigator.vibrate([120]);
+      else if(level === "danger") navigator.vibrate([200, 100, 200]);
+      else if(level === "critical") navigator.vibrate([300, 100, 300, 100, 300]);
       lastVibrateAt = now;
-      debug("バイブ", level);
-    }catch(e){
-      debug("バイブ非対応", e && e.message ? e.message : "");
-    }
+    }catch(e){}
   }
 
   async function saveAlertState(level, nearest){
     if(!playerRef) return;
 
     const now = Date.now();
-    if(lastSavedLevel === level && now - lastSaveAt < SAVE_MIN_MS){
-      return;
-    }
+    if(lastSavedLevel === level && now - lastSaveAt < SAVE_MIN_MS) return;
 
     lastSaveAt = now;
     lastSavedLevel = level;
 
-    const payload = {
-      nearestHunterDistanceM: nearest ? nearest.distanceM : null,
-      nearestHunterName: nearest ? nearest.nickname : null,
-      hunterAlertLevel: level,
-      hunterAlertUpdatedAt: now,
-      updatedAt: now
-    };
-
     try{
-      await playerRef.update(payload);
+      await playerRef.update({
+        nearestHunterDistanceM: nearest ? nearest.distanceM : null,
+        nearestHunterName: nearest ? nearest.nickname : null,
+        hunterAlertLevel: level,
+        hunterAlertUpdatedAt: now,
+        updatedAt: now
+      });
     }catch(e){
       console.warn("[hunter-alert-sync] Firebase保存失敗", e);
     }
   }
 
-  function logEvalSnapshot(myId, ownLoc, hunterCount, nearest, level){
-    debug("自分の位置取得OK", ownLoc);
-    debug("HUNTER候補: " + hunterCount + "件");
-    if(nearest){
-      debug("最寄りHUNTER: " + nearest.distanceM + "m", {
-        name: nearest.nickname,
-        isDummy: !!nearest.isDummy
-      });
-    }else{
-      debug("最寄りHUNTER: なし");
-    }
-    debug("警告レベル: " + level);
-
-    const key = (nearest ? nearest.playerId + ":" + nearest.distanceM : "none") + ":" + level;
-    if(key !== lastLoggedNearestKey){
-      lastLoggedNearestKey = key;
-      logMsg("HUNTER候補: " + hunterCount + "件");
-      if(nearest){
-        logMsg("最寄りHUNTER: " + nearest.distanceM + "m");
-      }else{
-        logMsg("最寄りHUNTER: なし");
-      }
-      logMsg("警告レベル: " + level);
-    }
+  function fmtCoord(n){
+    return Number(n).toFixed(5);
   }
 
   window.evaluateHunterAlert = function(){
+    ensureElements();
+
     const myId = getPlayerId();
     if(!myId){
-      debug("判定スキップ", "playerIdなし");
+      setStatus("🟢 周囲安全", "hunter-alert-safe");
+      setDebug("playerIdなし。登録を確認してください。");
       return null;
     }
 
     const ownLoc = getOwnLocation();
     if(!ownLoc){
-      showNoLocation();
-      debug("HUNTER警告: 自分の位置情報なし");
+      setStatus("🟢 周囲安全", "hunter-alert-safe");
+      setDebug("自分の位置情報なし。位置情報を許可してください。\nplayerId: " + myId);
       return null;
     }
 
@@ -464,32 +386,47 @@
     const inSafe = isInSafeZone();
     const isHunter = role === "HUNTER";
     const ranges = getRanges();
-    const hunterCount = countHunterCandidates(myId);
-    const nearest = findNearestHunter(ownLoc.lat, ownLoc.lng, myId);
+    const found = findNearestHunter(ownLoc.lat, ownLoc.lng, myId);
+    const nearest = found.nearest;
+    const hunterCount = found.count;
     const level = computeAlertLevel(nearest ? nearest.distanceM : null, ranges);
-    const display = buildDisplay(level, nearest, { isHunter: isHunter, inSafe: inSafe });
+    const display = buildStatusText(level, nearest, { isHunter: isHunter, inSafe: inSafe });
 
-    logEvalSnapshot(myId, ownLoc, hunterCount, nearest, level);
-    logLevelChange(level);
-    updateAlertUI(display);
+    setStatus(display.text, display.css);
 
-    tryVibrate(level, {
-      isHunter: isHunter,
-      inSafe: inSafe,
-      role: role
-    });
+    if(hunterCount === 0){
+      setDebug(
+        "HUNTER候補: 0件 / players読込OK\n" +
+        "playerId: " + myId + "\n" +
+        "role: " + role + "\n" +
+        "自分: " + fmtCoord(ownLoc.lat) + "," + fmtCoord(ownLoc.lng) + "\n" +
+        "位置source: " + ownLoc.source + "\n" +
+        "警告レベル: " + level
+      );
+    }else{
+      setDebug(
+        "HUNTER候補: " + hunterCount + "件\n" +
+        "最寄り: " + (nearest ? nearest.nickname : "-") + "\n" +
+        "距離: " + (nearest ? nearest.distanceM + "m" : "-") + "\n" +
+        "自分: " + fmtCoord(ownLoc.lat) + "," + fmtCoord(ownLoc.lng) + "\n" +
+        "HUNTER: " + (nearest ? fmtCoord(nearest.lat) + "," + fmtCoord(nearest.lng) : "-") + "\n" +
+        "role: " + role + (inSafe ? " / SAFE中" : "") + "\n" +
+        "警告レベル: " + level
+      );
+    }
 
+    if(level !== lastAlertLevel){
+      lastAlertLevel = level;
+      logMsg("警告レベル: " + level);
+    }
+
+    tryVibrate(level, { isHunter: isHunter, inSafe: inSafe, role: role });
     saveAlertState(level, nearest);
 
     window.STREET_SURVIVAL_NEAREST_HUNTER = nearest;
     window.STREET_SURVIVAL_HUNTER_ALERT_LEVEL = level;
 
-    return {
-      level: level,
-      nearest: nearest,
-      ranges: ranges,
-      hunterCount: hunterCount
-    };
+    return { level: level, nearest: nearest, hunterCount: hunterCount, ranges: ranges };
   };
 
   function watchPlayers(){
@@ -497,12 +434,15 @@
 
     const db = getDb();
     if(!db){
+      setDebug("Firebase未接続。再試行中...");
       setTimeout(watchPlayers, BOOT_RETRY_MS);
       return;
     }
 
     playersWatchStarted = true;
-    logMsg("players監視開始");
+    const playerId = getPlayerId() || "-";
+    setDebug("players監視開始 / playerId: " + playerId);
+    logMsg("players監視開始 / playerId: " + playerId);
 
     db.ref("streetSurvival/players").on("value", snap => {
       allPlayers = snap.val() || {};
@@ -511,15 +451,15 @@
         selfPlayer = allPlayers[myId];
       }
       window.evaluateHunterAlert();
+    }, err => {
+      setDebug("players監視エラー: " + (err && err.message ? err.message : String(err)));
     });
   }
 
   function watchSelfPlayer(){
-    const ref = playerRef;
-    if(!ref || ref.__ssHunterAlertSelfWatch) return;
-
-    ref.__ssHunterAlertSelfWatch = true;
-    ref.on("value", snap => {
+    if(!playerRef || playerRef.__ssHunterAlertSelfWatch) return;
+    playerRef.__ssHunterAlertSelfWatch = true;
+    playerRef.on("value", snap => {
       selfPlayer = snap.val();
       window.evaluateHunterAlert();
     });
@@ -533,21 +473,31 @@
   }
 
   function boot(){
-    if(started) return;
+    ensureElements();
 
-    if(!canStart()){
+    const playerId = getPlayerId();
+    if(!playerId){
+      setStatus("🟢 周囲安全", "hunter-alert-safe");
+      setDebug("playerIdなし。登録を確認してください。");
       setTimeout(boot, BOOT_RETRY_MS);
       return;
     }
 
-    started = true;
-    const playerId = getPlayerId();
+    if(!window.firebase || typeof firebase.database !== "function" || !getDb()){
+      setStatus("🟢 周囲安全", "hunter-alert-safe");
+      setDebug("Firebase待機中... / playerId: " + playerId);
+      setTimeout(boot, BOOT_RETRY_MS);
+      return;
+    }
 
+    if(started) return;
+    started = true;
+
+    setStatus("🟢 周囲安全", "hunter-alert-safe");
+    setDebug("hunter-alert-sync.js 起動 / playerId: " + playerId);
     logMsg("hunter-alert-sync.js 起動");
     logMsg("playerId: " + playerId);
-    debug("起動 v" + VERSION, { playerId: playerId });
 
-    ensureAlertElement();
     playerRef = getDb().ref("streetSurvival/players/" + playerId);
     watchSelfPlayer();
     watchPlayers();
@@ -555,8 +505,23 @@
     window.evaluateHunterAlert();
   }
 
+  // 先頭で必ず画面に起動表示
+  try{
+    ensureElements();
+    setStatus("🟢 周囲安全", "hunter-alert-safe");
+    setDebug("hunter-alert-sync.js 起動中...");
+  }catch(e){
+    console.warn("[hunter-alert-sync] 初期表示失敗", e);
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", boot);
+  }else{
+    boot();
+  }
   window.addEventListener("load", boot);
-  setTimeout(boot, 500);
+  setTimeout(boot, 300);
+  setTimeout(boot, 1000);
 
   window.addEventListener("ss-player-registered", () => {
     started = false;
@@ -566,12 +531,13 @@
     selfPlayer = null;
     lastAlertLevel = null;
     lastSavedLevel = null;
-    lastLoggedNearestKey = null;
+    lastDebugText = "";
     if(evalTimer){
       clearInterval(evalTimer);
       evalTimer = null;
     }
-    setTimeout(boot, 800);
+    setDebug("登録完了。再起動中...");
+    setTimeout(boot, 500);
   });
 
   const originalCheckSafeZones = window.checkSafeZones;

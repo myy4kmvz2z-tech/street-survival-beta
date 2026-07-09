@@ -364,6 +364,13 @@ function applyAdminCommand(cmd){
   if(cmd.type === "RADIO"){
     receiveRadio(cmd.message || "運営速報");
   }
+  if(cmd.type === "CAPTURE"){
+    const captureMsg = cmd.message || ("🟢 " + (cmd.hunterName || "HUNTER") + " が " + (cmd.runnerName || "RUNNER") + " を捕まえました");
+    receiveRadio(captureMsg);
+    if(typeof window.updateRadioCard === "function"){
+      window.updateRadioCard(captureMsg);
+    }
+  }
 }
 function pollAdminCommand(){
   try{
@@ -1034,6 +1041,14 @@ function ssFinalApplyCommand(cmd) {
 
     if (cmd.type === "RADIO") {
       ssFinalReceiveRadio(cmd.message || "運営速報");
+    }
+
+    if (cmd.type === "CAPTURE") {
+      const captureMsg = cmd.message || ("🟢 " + (cmd.hunterName || "HUNTER") + " が " + (cmd.runnerName || "RUNNER") + " を捕まえました");
+      ssFinalReceiveRadio(captureMsg);
+      if(typeof window.updateRadioCard === "function"){
+        window.updateRadioCard(captureMsg);
+      }
     }
 
     if (cmd.type === "NORMAL" && typeof normalMode === "function") {

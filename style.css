@@ -1120,6 +1120,18 @@ html.ss-registered body {
   box-shadow: 0 0 28px rgba(255,0,0,0.45);
 }
 
+.capture-status {
+  border-radius: 14px;
+  padding: 12px;
+  margin: 10px 0;
+  font-weight: 900;
+  text-align: center;
+  background: rgba(255,80,40,0.18);
+  color: #fff;
+  border: 1px solid rgba(255,120,80,0.35);
+  white-space: pre-line;
+}
+
 .safe-area-banner {
   background: linear-gradient(180deg, rgba(89, 214, 141, 0.28), rgba(5, 20, 12, 0.95));
   border: 2px solid rgba(89, 214, 141, 0.55);

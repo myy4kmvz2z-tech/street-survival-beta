@@ -365,7 +365,7 @@ function applyAdminCommand(cmd){
     receiveRadio(cmd.message || "運営速報");
   }
   if(cmd.type === "CAPTURE"){
-    const captureMsg = cmd.message || ("🟢 " + (cmd.hunterName || "HUNTER") + " が " + (cmd.runnerName || "RUNNER") + " を捕まえました");
+    const captureMsg = cmd.message || ("🔥 " + (cmd.hunterName || "HUNTER") + " が " + (cmd.runnerName || "RUNNER") + " を捕まえました");
     receiveRadio(captureMsg);
     if(typeof window.updateRadioCard === "function"){
       window.updateRadioCard(captureMsg);
@@ -415,6 +415,13 @@ function ssApplyFirebaseCommand(cmd){
     if(cmd.type === "RADIO"){
       if(typeof receiveRadio === "function") receiveRadio(cmd.message || "運営速報");
       else if(typeof setRadio === "function") setRadio(cmd.message || "運営速報");
+      return;
+    }
+    if(cmd.type === "CAPTURE"){
+      const captureMsg = cmd.message || ("🔥 " + (cmd.hunterName || "HUNTER") + " が " + (cmd.runnerName || "RUNNER") + " を捕まえました");
+      if(typeof receiveRadio === "function") receiveRadio(captureMsg);
+      else if(typeof setRadio === "function") setRadio(captureMsg);
+      if(typeof window.updateRadioCard === "function") window.updateRadioCard(captureMsg);
       return;
     }
     if(cmd.type === "NORMAL" && typeof normalMode === "function") normalMode();
@@ -1044,7 +1051,7 @@ function ssFinalApplyCommand(cmd) {
     }
 
     if (cmd.type === "CAPTURE") {
-      const captureMsg = cmd.message || ("🟢 " + (cmd.hunterName || "HUNTER") + " が " + (cmd.runnerName || "RUNNER") + " を捕まえました");
+      const captureMsg = cmd.message || ("🔥 " + (cmd.hunterName || "HUNTER") + " が " + (cmd.runnerName || "RUNNER") + " を捕まえました");
       ssFinalReceiveRadio(captureMsg);
       if(typeof window.updateRadioCard === "function"){
         window.updateRadioCard(captureMsg);

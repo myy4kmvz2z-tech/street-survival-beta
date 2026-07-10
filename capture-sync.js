@@ -187,6 +187,7 @@
     return nearest;
   }
 
+  // TEST HUNTER は端末を持たないため、RUNNER側で isDummy HUNTER 接近のみ検知する
   function findNearestDummyHunter(myLat, myLng, myId){
     let nearest = null;
 
@@ -220,7 +221,7 @@
 
   async function writeCaptureEvent(db, hunterId, hunterName, runnerId, runnerName, distanceM){
     const now = Date.now();
-    const message = "🟢 " + hunterName + " が " + runnerName + " を捕まえました";
+    const message = "🔥 " + hunterName + " が " + runnerName + " を捕まえました";
 
     await db.ref("streetSurvival/captureLogs").push({
       hunterId: hunterId,
@@ -270,16 +271,14 @@
     try{
       setCaptureStatus("🔥 吸収成立：" + runnerName);
 
-      const runnerUpdate = {
+      await db.ref("streetSurvival/players/" + runnerId).update({
         role: "HUNTER",
         hunterUntil: hunterUntil,
         capturedBy: hunterId,
         capturedByName: hunterName,
         capturedAt: now,
         updatedAt: now
-      };
-
-      await db.ref("streetSurvival/players/" + runnerId).update(runnerUpdate);
+      });
 
       if(isDummyHunter){
         await db.ref("streetSurvival/players/" + hunterId).update({
@@ -306,8 +305,8 @@
       if(myId === hunterId){
         logMsg("🔥 吸収成立：" + runnerName + "を捕まえました");
       }else if(myId === runnerId){
-        logMsg("🔥 捕まりました：" + hunterName + "がHUNTERになりました");
-        setCaptureStatus("🔥 捕まりました：" + hunterName);
+        logMsg("🔥 捕まりました：HUNTERになりました");
+        setCaptureStatus("🔥 捕まりました：HUNTERになりました");
       }else{
         logMsg("🔥 吸収成立：" + hunterName + " → " + runnerName);
       }
@@ -347,6 +346,8 @@
       return;
     }
 
+    // 通常は自分がHUNTERの時だけ判定。
+    // 例外: isDummy TEST HUNTER は端末がないため、RUNNER側で接近検知する。
     if(role === "RUNNER"){
       if(isOwnSafe()){
         setCaptureStatus("SAFE中のため吸収無効");
@@ -459,17 +460,29 @@
     }, EVAL_INTERVAL_MS);
   }
 
-  function boot(){
+  let bootLogged = false;
+
+  function showBootLog(){
     ensureCaptureStatus();
+    if(!bootLogged){
+      bootLogged = true;
+      logMsg("capture-sync.js 起動");
+      logMsg("吸収判定：待機中");
+    }
+    setCaptureStatus("capture-sync.js 起動\n吸収判定：待機中");
+  }
+
+  function boot(){
+    showBootLog();
 
     if(!getPlayerId()){
-      setCaptureStatus("吸収判定：playerIdなし");
+      setCaptureStatus("capture-sync.js 起動\n吸収判定：playerIdなし");
       setTimeout(boot, BOOT_RETRY_MS);
       return;
     }
 
     if(!window.firebase || typeof firebase.database !== "function" || !getDb()){
-      setCaptureStatus("吸収判定：Firebase待機中");
+      setCaptureStatus("capture-sync.js 起動\n吸収判定：Firebase待機中");
       setTimeout(boot, BOOT_RETRY_MS);
       return;
     }
@@ -477,7 +490,6 @@
     if(started) return;
     started = true;
 
-    logMsg("capture-sync.js 起動 v" + VERSION);
     setCaptureStatus("吸収判定：待機中");
 
     watchSelf();
@@ -486,13 +498,21 @@
     evaluateCapture();
   }
 
+  // スクリプト読込直後に必ず画面へ起動表示
+  try{
+    showBootLog();
+  }catch(e){
+    console.warn("[capture-sync] 初期表示失敗", e);
+  }
+
   if(document.readyState === "loading"){
     document.addEventListener("DOMContentLoaded", boot);
   }else{
     boot();
   }
   window.addEventListener("load", boot);
-  setTimeout(boot, 500);
+  setTimeout(boot, 300);
+  setTimeout(boot, 1000);
 
   window.addEventListener("ss-player-registered", () => {
     started = false;
@@ -503,6 +523,7 @@
     allPlayers = {};
     lastCaptureAt = 0;
     lastStatusText = "";
+    bootLogged = false;
     if(evalTimer){
       clearInterval(evalTimer);
       evalTimer = null;

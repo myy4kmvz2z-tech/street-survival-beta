@@ -82,9 +82,10 @@
     el.textContent = "吸収判定：待機中";
 
     const anchor =
+      document.getElementById("hunterAlertDebug") ||
       document.getElementById("hunterAlertStatus") ||
-      document.getElementById("safeZoneStatus") ||
-      document.getElementById("radioCard");
+      document.getElementById("radioCard") ||
+      document.getElementById("safeZoneStatus");
 
     if(anchor && anchor.parentNode){
       if(anchor.nextSibling){
@@ -358,12 +359,14 @@
       }
 
       if(!ownLoc){
-        setCaptureStatus("吸収判定：待機中");
+        setCaptureStatus("吸収判定：位置情報なし");
         return;
       }
 
+      // TEST HUNTER (isDummy) はクライアントを持たないため、RUNNER側で接近を検知して吸収する
       const dummyHunter = findNearestDummyHunter(ownLoc.lat, ownLoc.lng, myId);
       if(dummyHunter && dummyHunter.distanceM <= battleRange){
+        setCaptureStatus("🔥 吸収成立：" + getNickname(selfPlayer, myId));
         await applyCapture(
           dummyHunter.playerId,
           dummyHunter.player,
@@ -374,7 +377,13 @@
         return;
       }
 
-      setCaptureStatus("吸収判定：待機中");
+      if(dummyHunter){
+        setCaptureStatus(
+          "吸収判定：TEST HUNTER接近中\n約" + Math.round(dummyHunter.distanceM) + "m / 判定" + battleRange + "m"
+        );
+      }else{
+        setCaptureStatus("吸収判定：待機中");
+      }
       return;
     }
 
@@ -451,17 +460,29 @@
     }, EVAL_INTERVAL_MS);
   }
 
-  function boot(){
+  let bootLogged = false;
+
+  function showBootLog(){
     ensureCaptureStatus();
+    if(!bootLogged){
+      bootLogged = true;
+      logMsg("capture-sync.js 起動");
+      logMsg("吸収判定：待機中");
+    }
+    setCaptureStatus("capture-sync.js 起動\n吸収判定：待機中");
+  }
+
+  function boot(){
+    showBootLog();
 
     if(!getPlayerId()){
-      setCaptureStatus("吸収判定：playerIdなし");
+      setCaptureStatus("capture-sync.js 起動\n吸収判定：playerIdなし");
       setTimeout(boot, BOOT_RETRY_MS);
       return;
     }
 
     if(!window.firebase || typeof firebase.database !== "function" || !getDb()){
-      setCaptureStatus("吸収判定：Firebase待機中");
+      setCaptureStatus("capture-sync.js 起動\n吸収判定：Firebase待機中");
       setTimeout(boot, BOOT_RETRY_MS);
       return;
     }
@@ -469,7 +490,6 @@
     if(started) return;
     started = true;
 
-    logMsg("capture-sync.js 起動 v" + VERSION);
     setCaptureStatus("吸収判定：待機中");
 
     watchSelf();
@@ -478,13 +498,21 @@
     evaluateCapture();
   }
 
+  // スクリプト読込直後に必ず画面へ起動表示
+  try{
+    showBootLog();
+  }catch(e){
+    console.warn("[capture-sync] 初期表示失敗", e);
+  }
+
   if(document.readyState === "loading"){
     document.addEventListener("DOMContentLoaded", boot);
   }else{
     boot();
   }
   window.addEventListener("load", boot);
-  setTimeout(boot, 500);
+  setTimeout(boot, 300);
+  setTimeout(boot, 1000);
 
   window.addEventListener("ss-player-registered", () => {
     started = false;
@@ -495,6 +523,7 @@
     allPlayers = {};
     lastCaptureAt = 0;
     lastStatusText = "";
+    bootLogged = false;
     if(evalTimer){
       clearInterval(evalTimer);
       evalTimer = null;

@@ -93,6 +93,17 @@
     <div id="radioCardText" class="radio-card-text">RADIO待機中</div>
   </div>
 
+  <div id="hunterAlertStatus" class="hunter-alert-status hunter-alert-safe">
+🟢 周囲安全
+  </div>
+  <div id="hunterAlertDebug" class="hunter-alert-debug">
+HUNTER警告: 起動待ち
+  </div>
+
+  <div id="captureStatus" class="capture-status">
+吸収判定：待機中
+  </div>
+
   <div id="safeAreaBanner" class="safe-area-banner hidden">
     <div id="safeAreaBannerTitle" class="safe-area-banner-title">🛡 SAFEゾーン</div>
     <div id="safeAreaBannerSub" class="safe-area-banner-sub">ここでは安全です</div>
@@ -100,15 +111,6 @@
 
   <div id="safeZoneStatus" class="safe-zone-status">🛡 SAFEゾーン外</div>
   <div id="healerZoneStatus" class="healer-zone-status"></div>
-
-  <div id="hunterAlertStatus" class="hunter-alert-status hunter-alert-safe">
-    🟢 周囲安全
-    近くにHUNTERはいません
-  </div>
-
-  <div id="captureStatus" class="capture-status">
-    吸収判定：待機中
-  </div>
 
   <div class="info-grid">
     <div><span>位置情報</span><b id="locationStatus">取得中</b></div>
@@ -302,8 +304,8 @@
 <script src="game-ui.js?v=2"></script>
 <script src="location-sync.js?v=3"></script>
 <script src="safe-zone-sync.js?v=2"></script>
-<script src="hunter-alert-sync.js?v=2"></script>
-<script src="capture-sync.js?v=1"></script>
+<script src="hunter-alert-sync.js?v=3"></script>
+<script src="capture-sync.js?v=2"></script>
 
 
 <script>

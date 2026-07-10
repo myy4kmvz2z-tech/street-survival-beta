@@ -1,7 +1,7 @@
-/* SAFE ZONE SYNC v2.0 - streetSurvival/safeZones + ヒーラー回復 */
+/* SAFE ZONE SYNC v3.0 - streetSurvival/safeZones + ヒーラー回復 + SAFE解除反映 */
 
 (function(){
-  const VERSION = 2;
+  const VERSION = 3;
   const SAVE_INTERVAL_MS = 5000;
   const GEO_OPTIONS = {
     enableHighAccuracy: true,
@@ -11,6 +11,8 @@
 
   window.STREET_SURVIVAL_SAFE_ZONES = window.STREET_SURVIVAL_SAFE_ZONES || [];
   window.STREET_SURVIVAL_CURRENT_LOCATION = window.STREET_SURVIVAL_CURRENT_LOCATION || null;
+  window.STREET_SURVIVAL_CURRENT_SAFE_ZONE = window.STREET_SURVIVAL_CURRENT_SAFE_ZONE || null;
+  window.STREET_SURVIVAL_IS_SAFE = window.STREET_SURVIVAL_IS_SAFE === true;
 
   let started = false;
   let zonesWatchStarted = false;
@@ -284,7 +286,10 @@
 
     if(lastSafeZoneId && !newId){
       logMsg("🛡 SAFEゾーンを出ました");
-      debug("SAFE判定", "outside");
+      logMsg("SAFE解除");
+      logMsg("isSafe=false");
+      logMsg("safeZoneName=null");
+      debug("SAFE判定", "outside / cleared");
     }else if(newId){
       logMsg("🛡 SAFEゾーンに入りました：" + match.name);
       debug("SAFE判定", "inside " + match.name);
@@ -293,15 +298,61 @@
     lastSafeZoneId = newId;
   }
 
-  async function saveSafeZoneState(match){
+  function notifyCaptureReevaluate(){
+    try{
+      if(typeof window.evaluateCapture === "function"){
+        window.evaluateCapture();
+      }
+    }catch(e){}
+
+    setTimeout(() => {
+      try{
+        if(typeof window.evaluateCapture === "function"){
+          window.evaluateCapture();
+        }
+      }catch(e){}
+    }, 500);
+
+    setTimeout(() => {
+      try{
+        if(typeof window.evaluateCapture === "function"){
+          window.evaluateCapture();
+        }
+      }catch(e){}
+    }, 2500);
+  }
+
+  function applySafeState(match, options){
+    const opts = options || {};
+    const wasSafe = window.STREET_SURVIVAL_IS_SAFE === true;
+    const isSafe = !!match;
+
+    currentMatch = match || null;
+    window.STREET_SURVIVAL_CURRENT_SAFE_ZONE = currentMatch;
+    window.STREET_SURVIVAL_IS_SAFE = isSafe;
+
+    logSafeZoneTransition(currentMatch);
+    updateSafeZoneUI(currentMatch);
+    saveSafeZoneState(currentMatch, { force: !!opts.force || (wasSafe && !isSafe) });
+    syncHealerTimer(currentMatch);
+
+    if(wasSafe && !isSafe){
+      notifyCaptureReevaluate();
+    }
+
+    return currentMatch;
+  }
+
+  async function saveSafeZoneState(match, options){
     const ref = ensurePlayerRef();
     if(!ref) return;
 
+    const opts = options || {};
     const now = Date.now();
     const zoneId = match ? match.zoneId : null;
     const zoneChanged = zoneId !== lastSavedSafeZoneId;
 
-    if(!zoneChanged && now - lastSaveAt < SAVE_INTERVAL_MS){
+    if(!opts.force && !zoneChanged && now - lastSaveAt < SAVE_INTERVAL_MS){
       return;
     }
 
@@ -335,6 +386,7 @@
           healerZoneName: null,
           updatedAt: now
         });
+        debug("Firebase SAFE解除", { isSafe: false, safeZoneName: null });
       }
     }catch(e){
       console.warn("[safe-zone-sync] Firebase保存失敗", e);
@@ -436,19 +488,19 @@
 
     if(!loc){
       debug("checkSafeZones", "現在地なし");
+      // 位置がなくても SAFEゾーン自体がOFFなら解除する
+      if(!zones.length && (window.STREET_SURVIVAL_IS_SAFE || lastSafeZoneId || lastSavedSafeZoneId)){
+        return applySafeState(null, { force: true });
+      }
       return null;
     }
 
     if(!zones.length){
-      debug("checkSafeZones", "SAFEゾーンなし");
-      currentMatch = null;
-      updateSafeZoneUI(null);
-      syncHealerTimer(null);
-      return null;
+      debug("checkSafeZones", "SAFEゾーンなし / 解除");
+      return applySafeState(null, { force: true });
     }
 
     const match = findClosestSafeZone(loc.lat, loc.lng);
-    currentMatch = match;
 
     debug("現在地", { lat: loc.lat, lng: loc.lng });
     if(match){
@@ -457,13 +509,7 @@
       debug("SAFE判定", "範囲外");
     }
 
-    logSafeZoneTransition(match);
-    updateSafeZoneUI(match);
-    saveSafeZoneState(match);
-    syncHealerTimer(match);
-
-    window.STREET_SURVIVAL_CURRENT_SAFE_ZONE = match;
-    return match;
+    return applySafeState(match, { force: !match && window.STREET_SURVIVAL_IS_SAFE === true });
   };
 
   window.buildSafeZonePlayerFields = function(areaResult){

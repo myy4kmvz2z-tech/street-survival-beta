@@ -146,7 +146,9 @@
   }
 
   function isOwnSafe(){
-    if(selfPlayer && selfPlayer.isSafe === true) return true;
+    if(typeof window.STREET_SURVIVAL_IS_SAFE === "boolean"){
+      return window.STREET_SURVIVAL_IS_SAFE === true;
+    }
     if(window.STREET_SURVIVAL_CURRENT_SAFE_ZONE) return true;
     return false;
   }
@@ -420,6 +422,8 @@
     );
   }
 
+  window.evaluateCapture = evaluateCapture;
+
   function watchSelf(){
     if(selfWatchStarted) return;
     const db = getDb();
@@ -455,7 +459,15 @@
 
   function startEvalLoop(){
     if(evalTimer) return;
+    let lastKnownIsSafe = window.STREET_SURVIVAL_IS_SAFE === true;
     evalTimer = setInterval(() => {
+      const isSafeNow = window.STREET_SURVIVAL_IS_SAFE === true;
+      if(isSafeNow !== lastKnownIsSafe){
+        lastKnownIsSafe = isSafeNow;
+        if(!isSafeNow){
+          setCaptureStatus("吸収判定：SAFE解除後の再判定");
+        }
+      }
       evaluateCapture();
     }, EVAL_INTERVAL_MS);
   }

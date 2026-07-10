@@ -146,11 +146,7 @@
   }
 
   function isOwnSafe(){
-    if(typeof window.STREET_SURVIVAL_IS_SAFE === "boolean"){
-      return window.STREET_SURVIVAL_IS_SAFE === true;
-    }
-    if(window.STREET_SURVIVAL_CURRENT_SAFE_ZONE) return true;
-    return false;
+    return window.STREET_SURVIVAL_IS_SAFE === true;
   }
 
   function getNickname(player, fallbackId){
